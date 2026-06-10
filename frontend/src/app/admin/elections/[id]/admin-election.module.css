@@ -1,0 +1,241 @@
+.container {
+  padding: 2.5rem 0 5rem;
+}
+
+/* ── Back link ───────────────────────────────────────────────── */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-text-3);
+  font-size: 0.82rem;
+  margin-bottom: 2rem;
+  transition: color var(--t-fast);
+  letter-spacing: -0.01em;
+}
+
+.backLink:hover {
+  color: var(--color-text);
+}
+
+/* ── Header card ─────────────────────────────────────────────── */
+.headerCard {
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.headerContent {
+  max-width: 65%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .headerContent { max-width: 100%; }
+}
+
+.title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+.desc {
+  color: var(--color-text-2);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: sticky;
+  top: 76px;
+}
+
+@media (max-width: 1024px) {
+  .rightCol { position: static; }
+}
+
+.sectionTitle {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ── Form card ───────────────────────────────────────────────── */
+.formCard {
+  padding: 1.5rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Candidate list ──────────────────────────────────────────── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--color-border);
+}
+
+.emptyState {
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--color-text-3);
+  font-size: 0.875rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+}
+
+/* ── Candidate item ──────────────────────────────────────────── */
+.itemCard {
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--color-surface);
+  border: none;
+  border-radius: 0;
+  transition: background var(--t-fast);
+}
+
+.itemCard:hover {
+  background: var(--color-surface-2);
+}
+
+@media (max-width: 640px) {
+  .itemCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+  }
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-3);
+  flex-shrink: 0;
+}
+
+.avatarPlaceholder {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-3);
+  flex-shrink: 0;
+}
+
+.itemInfo {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.itemName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  margin: 0;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemDesc {
+  font-size: 0.78rem;
+  color: var(--color-text-3);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemAddress {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--color-text-3);
+}
+
+.itemVotes {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-2);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--r-sm);
+  font-family: 'DM Mono', monospace;
+  flex-shrink: 0;
+}
+
+.itemActions {
+  display: flex;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .itemActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.loaderContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6rem 0;
+}

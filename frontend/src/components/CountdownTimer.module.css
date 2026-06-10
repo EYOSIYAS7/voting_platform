@@ -1,0 +1,48 @@
+.timer {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 46px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-sm);
+  padding: 0.45rem 0.35rem 0.3rem;
+}
+
+.value {
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: 'DM Mono', monospace;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.label {
+  font-size: 0.58rem;
+  font-weight: 500;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.2rem;
+}
+
+.compact {
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-family: 'DM Mono', monospace;
+  color: var(--color-text);
+}
+
+.expired {
+  font-size: 0.8rem;
+  color: var(--color-text-3);
+  font-family: 'DM Mono', monospace;
+}
