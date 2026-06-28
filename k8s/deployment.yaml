@@ -1,47 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: voting-platform-frontend
+  name: voting-platform
   namespace: bc-edge-apps
   labels:
-    app: voting-platform-frontend
+    app: voting-platform
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: voting-platform-frontend
+      app: voting-platform
   template:
     metadata:
       labels:
-        app: voting-platform-frontend
+        app: voting-platform
     spec:
       containers:
-      - name: frontend
-        # REPLACE 'your-gh-username-or-org' with your actual GHCR namespace/username
-        image: ghcr.io/your-gh-username-or-org/voting-platform-frontend:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 3000
-          name: http
-        envFrom:
-        - configMapRef:
-            name: voting-platform-config
-        resources:
-          limits:
-            cpu: "1"
-            memory: 1Gi
-          requests:
-            cpu: "200m"
-            memory: 256Mi
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 10
+        - name: voting-platform
+          image: ghcr.io/eyosiyas7/voting_platform:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: voting-platform-config
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: "200m"
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10

@@ -1,14 +1,14 @@
 $ErrorActionPreference = "Stop"
 
 # Default variables
-$ImageName = "voting-platform-frontend"
+$ImageName = "voting_platform"
 $Namespace = "bc-edge-apps"
 $DefaultTag = "latest"
 
 # Build-time variables for Besu network defaults
 $NextPublicContractAddress = "0x8c0c3B8f93d627519E7C2451e52B834Ae240598a"
-$NextPublicBesuRpcUrl = "http://172.27.3.251/rpc"
-$NextPublicBesuWsUrl = "ws://172.27.3.251/ws"
+$NextPublicBesuRpcUrl = "http://172.27.3.58:30425"
+$NextPublicBesuWsUrl = "ws://172.27.3.58:32575"
 $NextPublicBesuChainId = "1337"
 $NextPublicBesuChainName = "Besu Network"
 
@@ -52,7 +52,7 @@ docker push "$FullImageName"
 
 Write-Host "Step 3: Preparing Kubernetes manifests..." -ForegroundColor Yellow
 $DeploymentContent = Get-Content -Raw -Path "k8s/deployment.yaml"
-$UpdatedDeploymentContent = $DeploymentContent -replace "image: ghcr.io/your-gh-username-or-org/voting-platform-frontend:latest", "image: $FullImageName"
+$UpdatedDeploymentContent = $DeploymentContent -replace "image: ghcr.io/eyosiyas7/voting_platform:latest", "image: $FullImageName"
 
 $TempDeploymentFile = [System.IO.Path]::GetTempFileName()
 Set-Content -Path $TempDeploymentFile -Value $UpdatedDeploymentContent
@@ -65,9 +65,9 @@ kubectl apply -f k8s/service.yaml
 Remove-Item -Path $TempDeploymentFile -Force
 
 Write-Host "Step 5: Verifying deployment..." -ForegroundColor Yellow
-kubectl rollout status deployment/voting-platform-frontend -n $Namespace
+kubectl rollout status deployment/voting-platform -n $Namespace
 
 Write-Host ""
 Write-Host "Deployment completed successfully!" -ForegroundColor Green
-Write-Host "Access the frontend at: http://<NODE_IP>:30080" -ForegroundColor Green
+Write-Host "Access the frontend at: http://<NODE_IP>:30081" -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Cyan

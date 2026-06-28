@@ -3,14 +3,14 @@
 set -e
 
 # Default variables
-IMAGE_NAME="voting-platform-frontend"
+IMAGE_NAME="voting_platform"
 NAMESPACE="bc-edge-apps"
 DEFAULT_TAG="latest"
 
 # Build-time variables for Besu network defaults
 NEXT_PUBLIC_CONTRACT_ADDRESS="0x8c0c3B8f93d627519E7C2451e52B834Ae240598a"
-NEXT_PUBLIC_BESU_RPC_URL="http://172.27.3.251/rpc"
-NEXT_PUBLIC_BESU_WS_URL="ws://172.27.3.251/ws"
+NEXT_PUBLIC_BESU_RPC_URL="http://172.27.3.58:30425"
+NEXT_PUBLIC_BESU_WS_URL="ws://172.27.3.58:32575"
 NEXT_PUBLIC_BESU_CHAIN_ID="1337"
 NEXT_PUBLIC_BESU_CHAIN_NAME="Besu Network"
 
@@ -59,7 +59,7 @@ docker push "$FULL_IMAGE_NAME"
 echo "Step 3: Preparing Kubernetes manifests..."
 # Create a temporary file with the replaced image namespace
 TEMP_DEPLOYMENT_FILE=$(mktemp)
-sed "s|image: ghcr.io/your-gh-username-or-org/voting-platform-frontend:latest|image: $FULL_IMAGE_NAME|g" k8s/deployment.yaml > "$TEMP_DEPLOYMENT_FILE"
+sed "s|image: ghcr.io/eyosiyas7/voting_platform:latest|image: $FULL_IMAGE_NAME|g" k8s/deployment.yaml > "$TEMP_DEPLOYMENT_FILE"
 
 echo "Step 4: Applying manifests to cluster in namespace '$NAMESPACE'..."
 kubectl apply -f k8s/configmap.yaml
@@ -70,9 +70,9 @@ kubectl apply -f k8s/service.yaml
 rm -f "$TEMP_DEPLOYMENT_FILE"
 
 echo "Step 5: Verifying deployment..."
-kubectl rollout status deployment/voting-platform-frontend -n "$NAMESPACE"
+kubectl rollout status deployment/voting-platform -n "$NAMESPACE"
 
 echo ""
 echo "Deployment completed successfully!"
-echo "Access the frontend at: http://<NODE_IP>:30080"
+echo "Access the frontend at: http://<NODE_IP>:30081"
 echo "========================================="
