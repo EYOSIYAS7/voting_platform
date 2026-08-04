@@ -1,7 +1,9 @@
 require("@nomicfoundation/hardhat-toolbox");
 // Load from contracts/.env first, fall back to project-root .env
 require("dotenv").config({ path: require("path").resolve(__dirname, ".env") });
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+require("dotenv").config({
+  path: require("path").resolve(__dirname, "../.env"),
+});
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -14,7 +16,7 @@ module.exports = {
   networks: {
     hardhat: {},
     besu: {
-      url: process.env.BESU_RPC_URL || "http://172.27.3.251/rpc",
+      url: process.env.BESU_RPC_URL,
       accounts: process.env.DEPLOYER_PRIVATE_KEY
         ? [process.env.DEPLOYER_PRIVATE_KEY]
         : [],
@@ -25,9 +27,9 @@ module.exports = {
     },
   },
   paths: {
-    sources:   "./contracts",
-    tests:     "./test",
-    cache:     "./cache",
+    sources: "./contracts",
+    tests: "./test",
+    cache: "./cache",
     artifacts: "./artifacts",
   },
 };
