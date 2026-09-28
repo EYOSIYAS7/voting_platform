@@ -21,26 +21,20 @@ import {
 } from "@/lib/abi/votingPlatform";
 import { useReadContracts } from "wagmi";
 import {
-  ArrowLeft,
-  Users,
-  UserPlus,
-  Check,
   X,
-  Lock,
-  Calendar,
-  AlertTriangle,
+  Check,
   CheckCircle,
+  AlertTriangle,
   Info,
-  Clock,
 } from "lucide-react";
 import styles from "./admin-election.module.css";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  Active: { label: "Live", cls: "badge-active" },
-  Upcoming: { label: "Upcoming", cls: "badge-upcoming" },
-  Registration: { label: "Open Reg.", cls: "badge-registration" },
-  Pending: { label: "Pending", cls: "badge-pending" },
-  Ended: { label: "Ended", cls: "badge-ended" },
+  Active: { label: "Open", cls: "status-active" },
+  Upcoming: { label: "Voting soon", cls: "status-upcoming" },
+  Registration: { label: "Registration", cls: "status-registration" },
+  Pending: { label: "Not yet open", cls: "status-pending" },
+  Ended: { label: "Closed", cls: "status-ended" },
 };
 
 export default function AdminElectionPage() {
@@ -266,18 +260,15 @@ export default function AdminElectionPage() {
   if (!isConnected || !isAdmin) {
     return (
       <div className="container">
-        <div className={`card ${styles.deniedCard} animate-fade-in`}>
-          <div className={styles.deniedIcon}>
-            <Lock size={36} />
-          </div>
-          <h2 className={styles.deniedTitle}>Access Denied</h2>
-          <p className={styles.deniedDesc}>
+        <div className={styles.denied}>
+          <h1>Admin access required</h1>
+          <p>
             {!isConnected
-              ? "Please connect your Web3 wallet in the top bar to verify admin permissions."
-              : "Your connected wallet is not authorized as an administrator of this voting platform."}
+              ? "Connect a wallet in the header to check whether you can administer elections."
+              : "This wallet is not an administrator."}
           </p>
           <Link href="/" className="btn btn-outline btn-sm">
-            Return Home
+            Home
           </Link>
         </div>
       </div>
@@ -285,60 +276,40 @@ export default function AdminElectionPage() {
   }
 
   return (
-    <div className={`${styles.container} animate-fade-in`}>
+    <div className={`container ${styles.page}`}>
       <Link href="/admin" className={styles.backLink}>
-        <ArrowLeft size={16} />
-        Back to admin dashboard
+        Admin
       </Link>
 
-      {/* Election Header Summary */}
-      <div className={`card ${styles.headerCard}`}>
+      <header className={`panel panel-pad ${styles.header}`}>
         <div className={styles.headerContent}>
           <h1 className={styles.title}>{election.title}</h1>
-          <p className={styles.desc}>{election.description}</p>
+          {election.description && <p className={styles.desc}>{election.description}</p>}
         </div>
-
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-          <span className={`badge ${cfg.cls}`}>{cfg.label}</span>
-          <span className="badge badge-ended">
-            {Number(election.totalVotes).toLocaleString()} votes cast
+        <p className={styles.metaLine}>
+          <span className={cfg.cls}>{cfg.label}</span>
+          <span>
+            {Number(election.totalVotes).toLocaleString()}{" "}
+            {Number(election.totalVotes) === 1 ? "vote" : "votes"}
           </span>
-        </div>
-      </div>
+        </p>
+      </header>
 
-      {/* Two-Column Grid */}
       <div className={styles.layout}>
-        {/* Left Column: Candidate Management */}
         <div className={styles.leftCol}>
-          {/* Pending Submissions */}
-          <div>
+          <div className="panel panel-pad">
             <h2 className={styles.sectionTitle}>
-              <Clock size={18} />
-              Pending Registrations ({pendingCandidates.length})
+              Pending ({pendingCandidates.length})
             </h2>
 
             {isLoading ? (
               <div className="spinner" />
             ) : pendingCandidates.length === 0 ? (
-              <div className={`card ${styles.emptyState}`}>
-                No self-registered candidates awaiting review.
-              </div>
+              <p className={styles.emptyState}>No registrations waiting for review.</p>
             ) : (
               <div className={styles.list}>
                 {pendingCandidates.map((cand) => (
-                  <div
-                    key={cand.id.toString()}
-                    className={`card ${styles.itemCard}`}
-                  >
-                    {cand.imageUrl ? (
-                      <img
-                        src={cand.imageUrl}
-                        alt={cand.name}
-                        className={styles.avatar}
-                      />
-                    ) : (
-                      <div className={styles.avatarPlaceholder}>N/A</div>
-                    )}
+                  <div key={cand.id.toString()} className={styles.item}>
                     <div className={styles.itemInfo}>
                       <h4 className={styles.itemName}>{cand.name}</h4>
                       {cand.description && (
@@ -354,7 +325,7 @@ export default function AdminElectionPage() {
                         onClick={() => handleApprove(cand.id)}
                         disabled={isApprovePending || isEnded}
                         title={
-                          isEnded ? "Election has ended" : "Approve Candidate"
+                          isEnded ? "Election has ended" : "Approve candidate"
                         }
                       >
                         <Check size={14} />
@@ -364,7 +335,7 @@ export default function AdminElectionPage() {
                         className="btn btn-danger btn-sm"
                         onClick={() => handleReject(cand.id)}
                         disabled={isRejectPending}
-                        title="Reject Candidate"
+                        title="Reject candidate"
                       >
                         <X size={14} />
                         Reject
@@ -376,36 +347,21 @@ export default function AdminElectionPage() {
             )}
           </div>
 
-          {/* Approved Candidates */}
-          <div>
+          <div className="panel panel-pad">
             <h2 className={styles.sectionTitle}>
-              <Users size={18} />
-              Approved Candidates ({approvedCandidates.length})
+              On the ballot ({approvedCandidates.length})
             </h2>
 
             {isLoading ? (
               <div className="spinner" />
             ) : approvedCandidates.length === 0 ? (
-              <div className={`card ${styles.emptyState}`}>
-                No approved candidates in this election. Use the side panel to
-                add one.
-              </div>
+              <p className={styles.emptyState}>
+                No approved candidates. Add one on the right, or approve a pending registration.
+              </p>
             ) : (
               <div className={styles.list}>
                 {approvedCandidates.map((cand) => (
-                  <div
-                    key={cand.id.toString()}
-                    className={`card ${styles.itemCard}`}
-                  >
-                    {cand.imageUrl ? (
-                      <img
-                        src={cand.imageUrl}
-                        alt={cand.name}
-                        className={styles.avatar}
-                      />
-                    ) : (
-                      <div className={styles.avatarPlaceholder}>N/A</div>
-                    )}
+                  <div key={cand.id.toString()} className={styles.item}>
                     <div className={styles.itemInfo}>
                       <h4 className={styles.itemName}>{cand.name}</h4>
                       {cand.description && (
@@ -415,14 +371,7 @@ export default function AdminElectionPage() {
                         {cand.walletAddress}
                       </span>
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "1rem",
-                        marginLeft: "auto",
-                      }}
-                    >
+                    <div className={styles.itemActions}>
                       <span className={styles.itemVotes}>
                         {Number(cand.voteCount).toLocaleString()} votes
                       </span>
@@ -430,7 +379,7 @@ export default function AdminElectionPage() {
                         className="btn btn-danger btn-sm"
                         onClick={() => handleReject(cand.id)}
                         disabled={isRejectPending}
-                        title="Remove Candidate"
+                        title="Remove candidate"
                       >
                         <X size={14} />
                         Remove
@@ -443,72 +392,26 @@ export default function AdminElectionPage() {
           </div>
         </div>
 
-        {/* Right Column: Direct Add Candidate */}
         <div className={styles.rightCol}>
           {isEnded ? (
-            <div
-              className="card"
-              style={{
-                padding: "1.5rem",
-                display: "flex",
-                gap: "0.75rem",
-                borderLeft: "4px solid var(--color-danger)",
-              }}
-            >
-              <AlertTriangle
-                size={20}
-                style={{ color: "var(--color-danger)", flexShrink: 0 }}
-              />
-              <div>
-                <h4 style={{ fontSize: "0.95rem", fontWeight: 700 }}>
-                  Election Concluded
-                </h4>
-                <p
-                  style={{
-                    fontSize: "0.82rem",
-                    color: "var(--color-text-2)",
-                    marginTop: "0.15rem",
-                  }}
-                >
-                  This election has ended. You can no longer add new candidates
-                  or approve self-registered profiles.
-                </p>
-              </div>
-            </div>
+            <p className={styles.endedNote}>
+              This election is closed. Candidates can no longer be added or approved.
+            </p>
           ) : (
-            <div className={`card ${styles.formCard}`}>
-              <h3
-                style={{
-                  fontSize: "1.15rem",
-                  fontWeight: 700,
-                  marginBottom: "0.25rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <UserPlus size={18} />
-                Add Approved Candidate
-              </h3>
-              <p
-                style={{
-                  fontSize: "0.82rem",
-                  color: "var(--color-text-2)",
-                  marginBottom: "1.25rem",
-                }}
-              >
-                Directly register a candidate. This bypasses the approval
-                pipeline, making them instantly eligible to receive votes once
-                polls open.
+            <div className={`panel panel-pad ${styles.formBlock}`}>
+              <h3 className={styles.formTitle}>Add a candidate</h3>
+              <p className={styles.formLead}>
+                Adds them to the ballot immediately, without a pending review.
               </p>
 
               <form onSubmit={handleAddCandidate} className={styles.form}>
                 <div className="form-group">
-                  <label className="form-label">Full Name *</label>
+                  <label className="form-label" htmlFor="add-name">Full name</label>
                   <input
+                    id="add-name"
                     type="text"
                     className="form-input"
-                    placeholder="Candidate name"
+                    placeholder="Name"
                     value={candName}
                     onChange={(e) => setCandName(e.target.value)}
                     required
@@ -516,11 +419,12 @@ export default function AdminElectionPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Wallet Address *</label>
+                  <label className="form-label" htmlFor="add-wallet">Wallet address</label>
                   <input
+                    id="add-wallet"
                     type="text"
                     className="form-input"
-                    placeholder="0x..."
+                    placeholder="0x…"
                     value={candWallet}
                     onChange={(e) => setCandWallet(e.target.value)}
                     required
@@ -528,21 +432,23 @@ export default function AdminElectionPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Description</label>
+                  <label className="form-label" htmlFor="add-desc">Description</label>
                   <textarea
+                    id="add-desc"
                     className="form-input"
-                    placeholder="Short bio or manifesto..."
+                    placeholder="Short bio"
                     value={candDesc}
                     onChange={(e) => setCandDesc(e.target.value)}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Avatar Image URL</label>
+                  <label className="form-label" htmlFor="add-img">Photo URL (optional)</label>
                   <input
+                    id="add-img"
                     type="url"
                     className="form-input"
-                    placeholder="https://example.com/photo.jpg"
+                    placeholder="https://"
                     value={candImg}
                     onChange={(e) => setCandImg(e.target.value)}
                   />
@@ -552,9 +458,8 @@ export default function AdminElectionPage() {
                   type="submit"
                   className="btn btn-primary"
                   disabled={isAddPending}
-                  style={{ marginTop: "0.5rem" }}
                 >
-                  {isAddPending ? "Adding..." : "Add Candidate"}
+                  {isAddPending ? "Adding…" : "Add candidate"}
                 </button>
               </form>
             </div>
@@ -579,7 +484,7 @@ export default function AdminElectionPage() {
               />
             )}
             {toast.type === "info" && (
-              <Info size={18} style={{ color: "var(--color-primary)" }} />
+              <Info size={18} style={{ color: "var(--color-accent)" }} />
             )}
             <span>{toast.message}</span>
           </div>

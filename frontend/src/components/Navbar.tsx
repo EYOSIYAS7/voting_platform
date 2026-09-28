@@ -1,12 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
 import { useIsAdmin } from "@/lib/hooks/useContract";
 import { useTheme } from "@/lib/context/ThemeContext";
-import { Vote, LayoutDashboard, List, Sun, Moon } from "lucide-react";
 import styles from "./Navbar.module.css";
 
 export function Navbar() {
@@ -14,75 +14,85 @@ export function Navbar() {
   const { address } = useAccount();
   const { data: isAdmin } = useIsAdmin(address);
   const { theme, toggleTheme } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const links = [
-    { href: "/elections", label: "Elections", icon: List },
-    ...(isAdmin
-      ? [{ href: "/admin", label: "Admin", icon: LayoutDashboard }]
-      : []),
+    { href: "/", label: "Overview", exact: true },
+    { href: "/elections", label: "Elections", exact: false },
+    ...(isAdmin ? [{ href: "/admin", label: "Admin", exact: false }] : []),
   ];
 
+  const isActive = (href: string, exact: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
+
+  const closeMenu = () => setMenuOpen(false);
+
   return (
-    <nav className={styles.nav}>
-      <div className={styles.inner}>
-        {/* Logo */}
-        <Link href="/" className={styles.logo}>
-          <span className={styles.logoText}>
-            Voting<span className={styles.logoAccent}>Platform</span>
-          </span>
+    <div className={styles.chrome}>
+      <aside
+        id="app-sidebar"
+        className={`${styles.sidebar} ${menuOpen ? styles.sidebarOpen : ""}`}
+        aria-label="Primary"
+      >
+        <Link href="/" className={styles.logo} onClick={closeMenu}>
+          Voting Platform
         </Link>
 
-        {/* Nav links */}
-        <div className={styles.links}>
-          {links.map(({ href, label, icon: Icon }) => (
+        <nav className={styles.links}>
+          {links.map(({ href, label, exact }) => (
             <Link
               key={href}
               href={href}
-              className={`${styles.link} ${pathname.startsWith(href) ? styles.linkActive : ""}`}
+              className={`${styles.link} ${isActive(href, exact) ? styles.linkActive : ""}`}
+              onClick={closeMenu}
             >
-              <Icon size={15} />
               {label}
             </Link>
           ))}
-        </div>
+        </nav>
 
-        {/* Right side: theme toggle + wallet */}
-        <div className={styles.rightGroup}>
-          {/* Theme toggle */}
-          <button
-            id="theme-toggle"
-            className={styles.themeToggle}
-            onClick={toggleTheme}
-            aria-label={
-              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-            }
-            title={theme === "dark" ? "Light mode" : "Dark mode"}
-          >
-            <span
-              className={`${styles.themeTrack} ${theme === "light" ? styles.themeTrackLight : ""}`}
-            >
-              <span
-                className={`${styles.themeThumb} ${theme === "light" ? styles.themeThumbLight : ""}`}
-              >
-                {theme === "dark" ? (
-                  <Moon size={12} strokeWidth={2.5} />
-                ) : (
-                  <Sun size={12} strokeWidth={2.5} />
-                )}
-              </span>
-            </span>
-          </button>
+        <button
+          id="theme-toggle"
+          className={styles.themeToggle}
+          onClick={toggleTheme}
+          aria-label={
+            theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+          }
+        >
+          {theme === "dark" ? "Light mode" : "Dark mode"}
+        </button>
+      </aside>
 
-          {/* Wallet connect */}
-          <div className={styles.wallet}>
-            <ConnectButton
-              showBalance={false}
-              chainStatus="icon"
-              accountStatus="avatar"
-            />
-          </div>
+      {menuOpen && (
+        <button
+          type="button"
+          className={styles.backdrop}
+          aria-label="Close menu"
+          onClick={closeMenu}
+        />
+      )}
+
+      <header className={styles.topbar}>
+        <button
+          type="button"
+          className={styles.menuBtn}
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="app-sidebar"
+        >
+          Menu
+        </button>
+
+        <p className={styles.context}>Hyperledger Besu</p>
+
+        <div className={styles.wallet}>
+          <ConnectButton
+            showBalance={false}
+            chainStatus="icon"
+            accountStatus="avatar"
+          />
         </div>
-      </div>
-    </nav>
+      </header>
+    </div>
   );
 }

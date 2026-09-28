@@ -18,15 +18,15 @@ import { VOTING_PLATFORM_ABI, Election, Candidate } from '@/lib/abi/votingPlatfo
 import { CandidateCard } from '@/components/CandidateCard';
 import { ResultsChart } from '@/components/ResultsChart';
 import { CountdownTimer } from '@/components/CountdownTimer';
-import { ArrowLeft, Users, Calendar, Award, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import styles from './election-detail.module.css';
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  Active:       { label: 'Voting Live',  cls: 'badge-active'       },
-  Upcoming:     { label: 'Upcoming',     cls: 'badge-upcoming'     },
-  Registration: { label: 'Open Reg.',    cls: 'badge-registration' },
-  Pending:      { label: 'Pending',      cls: 'badge-pending'      },
-  Ended:        { label: 'Ended',        cls: 'badge-ended'        },
+  Active:       { label: 'Voting open',   cls: 'status-active' },
+  Upcoming:     { label: 'Voting soon',   cls: 'status-upcoming' },
+  Registration: { label: 'Registration',  cls: 'status-registration' },
+  Pending:      { label: 'Not yet open',  cls: 'status-pending' },
+  Ended:        { label: 'Closed',        cls: 'status-ended' },
 };
 
 export default function ElectionDetailPage() {
@@ -190,25 +190,16 @@ export default function ElectionDetailPage() {
   const showLiveResults = status === 'Ended' || (status === 'Active' && hasVoted);
 
   return (
-    <div className={`${styles.container} animate-fade-in`}>
+    <div className={`container ${styles.page}`}>
       <Link href="/elections" className={styles.backLink}>
-        <ArrowLeft size={16} />
-        Back to elections
+        Elections
       </Link>
 
-      {/* ─── Election Header Banner ────────────────────────────────────── */}
-      <div className={`card ${styles.headerCard}`}>
-        {election.imageUrl && (
-          <div className={styles.headerBg} style={{ backgroundImage: `url(${election.imageUrl})` }} />
-        )}
+      <header className={`panel panel-pad ${styles.header}`}>
         <div className={styles.headerContent}>
-          <div className={styles.metaRow}>
-            <span className={`badge ${cfg.cls} ${status === 'Active' || status === 'Registration' ? 'badge-dot' : ''}`}>
-              {cfg.label}
-            </span>
-          </div>
+          <p className={`status ${cfg.cls}`}>{cfg.label}</p>
           <h1 className={styles.title}>{election.title}</h1>
-          <p className={styles.desc}>{election.description}</p>
+          {election.description && <p className={styles.desc}>{election.description}</p>}
         </div>
 
         <div className={styles.asideContent}>
@@ -225,34 +216,25 @@ export default function ElectionDetailPage() {
             </>
           )}
           {status === 'Ended' && (
-            <div className={styles.votedNotice} style={{ background: 'var(--color-surface-2)', borderColor: 'var(--color-border)' }}>
-              <Award size={16} style={{ color: 'var(--color-primary)' }} />
-              <span style={{ color: 'var(--color-text)' }}>Election Concluded</span>
-            </div>
+            <p className={styles.asideLabel}>This election is closed.</p>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* ─── Two-column layout ─────────────────────────────────────────── */}
       <div className={styles.layout}>
-        {/* Left column: Candidates or Registration */}
         <div className={styles.leftCol}>
-          <div>
-            <h2 className={styles.sectionTitle}>
-              <Users size={14} />
-              Approved Candidates
-            </h2>
+          <div className={`panel panel-pad ${styles.ballotPanel}`}>
+            <h2 className={styles.sectionTitle}>Candidates</h2>
 
             {isCandidatesLoading ? (
               <div className="spinner" />
             ) : candidates.length === 0 ? (
-              <div className="card empty-state" style={{ padding: '3rem 1.5rem' }}>
-                <Users size={32} />
-                <h3>No candidates approved yet</h3>
+              <div className="empty-state">
+                <h3>No candidates on the ballot yet</h3>
                 <p>
                   {status === 'Registration'
-                    ? 'Candidates are currently self-registering. Check back once registration ends and admins approve them.'
-                    : 'Candidates will appear here once approved by the administrators.'}
+                    ? 'Registration is open. Approved candidates will appear here after review.'
+                    : 'Candidates appear here after an administrator approves them.'}
                 </p>
               </div>
             ) : (
@@ -274,23 +256,23 @@ export default function ElectionDetailPage() {
             )}
           </div>
 
-          {/* Registration form if registration window is active */}
           {status === 'Registration' && (
-            <div className={`card ${styles.regCard}`}>
+            <div className={`panel panel-pad ${styles.regCard}`}>
               <div className={styles.regHeader}>
-                <h3 className={styles.regTitle}>Register as a Candidate</h3>
+                <h3 className={styles.regTitle}>Register as a candidate</h3>
                 <p className={styles.regDesc}>
-                  Submit your profile to self-register. The admin must review and approve your submission before voters can cast ballots for you.
+                  Submit your name. An administrator must approve you before you appear on the ballot.
                 </p>
               </div>
 
               <form onSubmit={handleRegister} className={styles.formGrid}>
                 <div className="form-group">
-                  <label className="form-label">Full Name *</label>
+                  <label className="form-label" htmlFor="cand-name">Full name</label>
                   <input
+                    id="cand-name"
                     type="text"
                     className="form-input"
-                    placeholder="Enter your name"
+                    placeholder="Your name"
                     value={candName}
                     onChange={(e) => setCandName(e.target.value)}
                     required
@@ -298,21 +280,23 @@ export default function ElectionDetailPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Profile Description</label>
+                  <label className="form-label" htmlFor="cand-desc">Description</label>
                   <textarea
+                    id="cand-desc"
                     className="form-input"
-                    placeholder="Describe your background and objectives..."
+                    placeholder="Background and what you stand for"
                     value={candDesc}
                     onChange={(e) => setCandDesc(e.target.value)}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Avatar Image URL (Optional)</label>
+                  <label className="form-label" htmlFor="cand-img">Photo URL (optional)</label>
                   <input
+                    id="cand-img"
                     type="url"
                     className="form-input"
-                    placeholder="https://example.com/avatar.jpg"
+                    placeholder="https://"
                     value={candImg}
                     onChange={(e) => setCandImg(e.target.value)}
                   />
@@ -322,91 +306,58 @@ export default function ElectionDetailPage() {
                   type="submit"
                   className="btn btn-primary"
                   disabled={isRegisterPending}
-                  style={{ alignSelf: 'flex-end', marginTop: '0.5rem' }}
                 >
-                  {isRegisterPending ? 'Submitting...' : 'Submit Candidacy'}
+                  {isRegisterPending ? 'Submitting…' : 'Submit registration'}
                 </button>
               </form>
             </div>
           )}
         </div>
 
-        {/* Right column: Results & Info */}
-        <div className={styles.rightCol}>
-          {/* Results chart */}
+        <aside className={styles.rightCol}>
           {showLiveResults && (
-            <ResultsChart candidates={candidates} totalVotes={election.totalVotes} />
+            <div className={`panel panel-pad ${styles.sideCard}`}>
+              <ResultsChart candidates={candidates} totalVotes={election.totalVotes} />
+            </div>
           )}
 
-          {/* Wallet prompt / Info card */}
           {!isConnected && (
-            <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                <AlertTriangle size={16} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: '0.15rem' }} />
-                <div>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '-0.02em' }}>Wallet disconnected</h4>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--color-text-2)', marginTop: '0.2rem' }}>
-                    Connect a Web3 wallet in the navigation bar to register or vote on-chain.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <p className={`panel panel-pad ${styles.note}`}>
+              Connect a wallet in the header to register or vote.
+            </p>
           )}
 
           {isConnected && status === 'Active' && !hasVoted && (
-            <div className="card" style={{ padding: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start', borderLeft: '2px solid var(--color-primary)' }}>
-              <Info size={16} style={{ color: 'var(--color-primary)', flexShrink: 0, marginTop: '0.15rem' }} />
-              <div>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '-0.02em' }}>Voting is open</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-2)', marginTop: '0.2rem' }}>
-                  Select a candidate below. You can only vote once — live results unlock after your ballot is cast.
-                </p>
-              </div>
-            </div>
+            <p className={`panel panel-pad ${styles.note}`}>
+              Choose one candidate. You can vote once. Results appear after your ballot is recorded.
+            </p>
           )}
 
           {isConnected && hasVoted && status === 'Active' && (
-            <div className={styles.votedNotice}>
-              <CheckCircle size={16} />
-              <span>Ballot verified. Your vote has been recorded on the blockchain.</span>
-            </div>
+            <p className={`panel panel-pad ${styles.votedNotice}`}>
+              Your vote has been recorded.
+            </p>
           )}
 
-          {/* Lifecycle timeline */}
-          <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h4 style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Calendar size={12} />
-              Timeline
-            </h4>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                <span style={{ fontSize: '0.68rem', color: 'var(--color-text-3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Registration</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-2)', fontFamily: "'DM Mono', monospace" }}>
-                  {formatTime(regStart)} – {formatTime(regEnd)}
-                </span>
-              </div>
-
-              <div style={{ height: '1px', background: 'var(--color-border)' }} />
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                <span style={{ fontSize: '0.68rem', color: 'var(--color-text-3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Voting</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-2)', fontFamily: "'DM Mono', monospace" }}>
-                  {formatTime(voteStart)} – {formatTime(voteEnd)}
-                </span>
-              </div>
+          <dl className={`panel panel-pad ${styles.timeline}`}>
+            <div>
+              <dt>Registration</dt>
+              <dd>{formatTime(regStart)} – {formatTime(regEnd)}</dd>
             </div>
-          </div>
-        </div>
+            <div>
+              <dt>Voting</dt>
+              <dd>{formatTime(voteStart)} – {formatTime(voteEnd)}</dd>
+            </div>
+          </dl>
+        </aside>
       </div>
 
-      {/* ─── Toast Container ────────────────────────────────────────────── */}
       {toast.show && (
         <div className="toast-container">
-          <div className={`toast animate-fade-in toast-${toast.type}`}>
+          <div className={`toast toast-${toast.type}`}>
             {toast.type === 'success' && <CheckCircle size={18} style={{ color: 'var(--color-success)' }} />}
             {toast.type === 'error' && <AlertTriangle size={18} style={{ color: 'var(--color-danger)' }} />}
-            {toast.type === 'info' && <Info size={18} style={{ color: 'var(--color-primary)' }} />}
+            {toast.type === 'info' && <Info size={18} style={{ color: 'var(--color-accent)' }} />}
             <span>{toast.message}</span>
           </div>
         </div>

@@ -15,16 +15,7 @@ import { VOTING_PLATFORM_ABI, Election } from "@/lib/abi/votingPlatform";
 import { useReadContracts } from "wagmi";
 import {
   Plus,
-  Shield,
-  ShieldCheck,
-  ShieldAlert,
-  Users,
-  BarChart3,
-  Calendar,
-  Lock,
-  ArrowRight,
   X,
-  PlusCircle,
   CheckCircle,
   AlertTriangle,
   Info,
@@ -306,29 +297,16 @@ export default function AdminDashboard() {
   if (!isConnected || !isAdmin) {
     return (
       <div className="container">
-        <div className={`card ${styles.deniedCard} animate-fade-in`}>
-          <div className={styles.deniedIcon}>
-            <Lock size={36} />
-          </div>
-          <h2 className={styles.deniedTitle}>Access Denied</h2>
+        <div className={styles.denied}>
+          <h1 className={styles.deniedTitle}>Admin access required</h1>
           <p className={styles.deniedDesc}>
             {!isConnected
-              ? "Please connect your Web3 wallet in the top bar to verify admin permissions."
-              : "Your connected wallet is not authorized as an administrator of this voting platform."}
+              ? "Connect a wallet in the header to check whether you can administer elections."
+              : "This wallet is not an administrator."}
           </p>
-          {!isConnected ? (
-            <div
-              style={{
-                marginTop: "0.5rem",
-                color: "var(--color-text-3)",
-                fontSize: "0.85rem",
-              }}
-            >
-              Awaiting connection...
-            </div>
-          ) : (
+          {isConnected && (
             <Link href="/" className="btn btn-outline btn-sm">
-              Return Home
+              Home
             </Link>
           )}
         </div>
@@ -337,110 +315,58 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="container animate-fade-in">
-      {/* Dashboard Header */}
-      <div className={styles.header}>
+    <div className="container">
+      <div className="page-head">
         <div>
-          <h1 className={styles.title}>Admin Dashboard</h1>
-          <p className={styles.desc}>
-            Manage voting events, approve candidates, and monitor blockchain
-            metrics.
-          </p>
+          <h1>Admin</h1>
+          <p>Create elections, review candidates, and grant administrators.</p>
         </div>
         <button
           className="btn btn-primary"
           onClick={() => setIsCreateModalOpen(true)}
         >
           <Plus size={16} />
-          New Election
+          New election
         </button>
       </div>
 
-      {/* Analytics Row */}
-      <div className={styles.statsRow}>
-        <div className={`card ${styles.statCard}`}>
-          <div className={styles.statIcon}>
-            <Calendar size={20} />
-          </div>
-          <div className={styles.statDetails}>
-            <span className={styles.statVal}>{stats.totalElections}</span>
-            <span className={styles.statLabel}>Elections</span>
-          </div>
+      <div className="stat-row">
+        <div className="stat">
+          <span>Elections</span>
+          <strong>{stats.totalElections}</strong>
         </div>
-
-        <div className={`card ${styles.statCard}`}>
-          <div
-            className={styles.statIcon}
-            style={{
-              background: "rgba(34,197,94,0.1)",
-              color: "var(--color-success)",
-            }}
-          >
-            <ShieldCheck size={20} />
-          </div>
-          <div className={styles.statDetails}>
-            <span className={styles.statVal}>{stats.activeCount}</span>
-            <span className={styles.statLabel}>Active (Live)</span>
-          </div>
+        <div className="stat">
+          <span>Open</span>
+          <strong>{stats.activeCount}</strong>
         </div>
-
-        <div className={`card ${styles.statCard}`}>
-          <div className={styles.statIcon}>
-            <Users size={20} />
-          </div>
-          <div className={styles.statDetails}>
-            <span className={styles.statVal}>{stats.upcomingCount}</span>
-            <span className={styles.statLabel}>Registration/Upc.</span>
-          </div>
+        <div className="stat">
+          <span>Upcoming</span>
+          <strong>{stats.upcomingCount}</strong>
         </div>
-
-        <div className={`card ${styles.statCard}`}>
-          <div
-            className={styles.statIcon}
-            style={{
-              background: "rgba(245,158,11,0.1)",
-              color: "var(--color-warning)",
-            }}
-          >
-            <BarChart3 size={20} />
-          </div>
-          <div className={styles.statDetails}>
-            <span className={styles.statVal}>
-              {Number(stats.totalVotes).toLocaleString()}
-            </span>
-            <span className={styles.statLabel}>Total Votes Cast</span>
-          </div>
+        <div className="stat">
+          <span>Votes recorded</span>
+          <strong>{Number(stats.totalVotes).toLocaleString()}</strong>
         </div>
       </div>
 
-      {/* Dashboard Tables / Actions */}
       <div className={styles.adminLayout}>
-        {/* Panel: Election Management */}
-        <div className={`card ${styles.panelCard}`}>
-          <div className={styles.panelHeader}>
-            <h3 className={styles.panelTitle}>Manage Elections</h3>
-          </div>
+        <section className={`panel ${styles.tablePanel}`}>
+          <h2 className={styles.panelTitle}>Elections</h2>
 
           <div className={styles.tableWrapper}>
             {electionsList.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "3rem 0",
-                  color: "var(--color-text-3)",
-                }}
-              >
-                No elections created yet. Click "New Election" to scaffold your
-                first voting event.
+              <div className="empty-state">
+                <h3>No elections yet</h3>
+                <p>Create one to open registration and voting windows.</p>
               </div>
             ) : (
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Election Title</th>
+                    <th>Title</th>
                     <th>Status</th>
-                    <th>Votes Cast</th>
-                    <th>Action</th>
+                    <th>Votes</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -451,35 +377,34 @@ export default function AdminDashboard() {
                       </td>
                       <td>
                         <span
-                          className={`badge ${
+                          className={
                             election.status === "Active"
-                              ? "badge-active"
+                              ? "status-active"
                               : election.status === "Registration"
-                                ? "badge-registration"
+                                ? "status-registration"
                                 : election.status === "Upcoming"
-                                  ? "badge-upcoming"
+                                  ? "status-upcoming"
                                   : election.status === "Pending"
-                                    ? "badge-pending"
-                                    : "badge-ended"
-                          }`}
+                                    ? "status-pending"
+                                    : "status-ended"
+                          }
                         >
                           {election.status === "Active"
-                            ? "Live"
+                            ? "Open"
                             : election.status === "Registration"
-                              ? "Open Reg."
+                              ? "Registration"
                               : election.status}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 500 }}>
+                      <td>
                         {Number(election.totalVotes).toLocaleString()}
                       </td>
                       <td>
                         <Link
                           href={`/admin/elections/${election.id}`}
-                          className="btn btn-outline btn-sm"
+                          className="btn btn-ghost btn-sm"
                         >
                           Manage
-                          <ArrowRight size={13} />
                         </Link>
                       </td>
                     </tr>
@@ -488,142 +413,103 @@ export default function AdminDashboard() {
               </table>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Panel: Super Admin Rights */}
         {isSuperAdmin && (
-          <div className={`card ${styles.panelCard}`}>
-            <div className={styles.panelHeader}>
-              <h3 className={styles.panelTitle}>Super Admin Controls</h3>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.5rem",
-              }}
-            >
-              <p style={{ fontSize: "0.9rem", color: "var(--color-text-2)" }}>
-                As the platform deployer, you can delegate administrator access
-                to other wallet addresses. Granted admins can create elections
-                and approve candidates, but only you can grant/revoke roles.
-              </p>
-              <form onSubmit={handleGrantAdmin} className={styles.grantForm}>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="0x wallet address"
-                  value={newAdminAddress}
-                  onChange={(e) => setNewAdminAddress(e.target.value)}
-                  disabled={isGrantPending}
-                  required
-                />
-                <button
-                  type="submit"
-                  className="btn btn-accent"
-                  disabled={isGrantPending}
-                >
-                  {isGrantPending ? "Granting..." : "Grant Admin"}
-                </button>
-              </form>
-            </div>
-          </div>
+          <section className={`panel panel-pad ${styles.grantSection}`}>
+            <h2 className={styles.panelTitle}>Grant administrator</h2>
+            <p className={styles.grantCopy}>
+              Super admins can add wallets that create elections and approve candidates.
+              Only you can grant or revoke that role.
+            </p>
+            <form onSubmit={handleGrantAdmin} className={styles.grantForm}>
+              <label htmlFor="new-admin" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
+                Wallet address
+              </label>
+              <input
+                id="new-admin"
+                type="text"
+                className="form-input"
+                placeholder="0x…"
+                value={newAdminAddress}
+                onChange={(e) => setNewAdminAddress(e.target.value)}
+                disabled={isGrantPending}
+                required
+              />
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isGrantPending}
+              >
+                {isGrantPending ? "Granting…" : "Grant"}
+              </button>
+            </form>
+          </section>
         )}
       </div>
 
       {/* ─── Create Election Modal ─────────────────────────────────────── */}
       {isCreateModalOpen && (
         <div className="modal-overlay">
-          <div className="modal animate-fade-in-up">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1rem",
-              }}
-            >
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 600, letterSpacing: '-0.03em' }}>
-                Create new election
-              </h3>
+          <div className="modal">
+            <div className={styles.modalHead}>
+              <h3>New election</h3>
               <button
+                type="button"
                 onClick={() => setIsCreateModalOpen(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--color-text-3)",
-                  cursor: "pointer",
-                }}
+                className={styles.iconClose}
+                aria-label="Close"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <p
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--color-text-2)",
-                marginBottom: "1.5rem",
-              }}
-            >
-              Set up a structured election lifecycle. Timestamps determine
-              candidate sign-up windows and ballot casting periods,
-              automatically enforced on-chain.
+            <p className={styles.modalLead}>
+              Set registration and voting windows. The contract enforces those times.
             </p>
 
             <form onSubmit={handleCreateElection}>
-              <div className="form-group" style={{ marginBottom: "1.25rem" }}>
-                <label className="form-label">Election Title *</label>
+              <div className="form-group" style={{ marginBottom: "1.1rem" }}>
+                <label className="form-label" htmlFor="el-title">Title</label>
                 <input
+                  id="el-title"
                   type="text"
                   className="form-input"
-                  placeholder="e.g. Presidential Election 2026"
+                  placeholder="Election title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
                 />
               </div>
 
-              <div className="form-group" style={{ marginBottom: "1.25rem" }}>
-                <label className="form-label">Description</label>
+              <div className="form-group" style={{ marginBottom: "1.1rem" }}>
+                <label className="form-label" htmlFor="el-desc">Description</label>
                 <textarea
+                  id="el-desc"
                   className="form-input"
-                  placeholder="Summarize the purpose and guidelines of this voting event..."
+                  placeholder="What this vote is about"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
 
-              <div className="form-group" style={{ marginBottom: "1.5rem" }}>
-                <label className="form-label">Cover Image URL (Optional)</label>
+              <div className="form-group" style={{ marginBottom: "1.35rem" }}>
+                <label className="form-label" htmlFor="el-img">Cover image URL (optional)</label>
                 <input
+                  id="el-img"
                   type="url"
                   className="form-input"
-                  placeholder="https://example.com/banner.jpg"
+                  placeholder="https://"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                 />
               </div>
 
-              <div
-                style={{
-                  borderTop: '1px solid var(--color-border)',
-                  padding: '1rem 0 0.5rem',
-                  fontWeight: 500,
-                  fontSize: '0.72rem',
-                  color: 'var(--color-text-3)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.07em',
-                }}
-              >
-                Time-gating schedule
-              </div>
+              <p className={styles.scheduleLabel}>Schedule</p>
 
               <div className={styles.formGrid}>
                 <div className="form-group">
-                  <label className="form-label">
-                    Candidate Registration Opens *
-                  </label>
+                  <label className="form-label">Registration opens</label>
                   <input
                     type="datetime-local"
                     className="form-input"
@@ -634,9 +520,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">
-                    Candidate Registration Closes *
-                  </label>
+                  <label className="form-label">Registration closes</label>
                   <input
                     type="datetime-local"
                     className="form-input"
@@ -647,7 +531,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Voting Opens *</label>
+                  <label className="form-label">Voting opens</label>
                   <input
                     type="datetime-local"
                     className="form-input"
@@ -658,7 +542,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Voting Closes *</label>
+                  <label className="form-label">Voting closes</label>
                   <input
                     type="datetime-local"
                     className="form-input"
@@ -682,7 +566,7 @@ export default function AdminDashboard() {
                   className="btn btn-primary"
                   disabled={isCreatePending}
                 >
-                  {isCreatePending ? "Deploying..." : "Deploy Election"}
+                  {isCreatePending ? "Creating…" : "Create election"}
                 </button>
               </div>
             </form>
@@ -707,7 +591,7 @@ export default function AdminDashboard() {
               />
             )}
             {toast.type === "info" && (
-              <Info size={18} style={{ color: "var(--color-primary)" }} />
+              <Info size={18} style={{ color: "var(--color-accent)" }} />
             )}
             <span>{toast.message}</span>
           </div>

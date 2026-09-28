@@ -1,122 +1,85 @@
-.card {
+.row {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base);
+  gap: 0.45rem;
+  padding: 0.95rem 1rem;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
   text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-sm);
+  min-height: 100%;
+  transition: border-color var(--t-fast);
 }
 
-.card:hover {
-  transform: translateY(-2px);
+.row:hover {
+  border-color: var(--color-border-2);
 }
 
-/* ── Cover ───────────────────────────────────────────────────── */
-.cover {
-  position: relative;
-  height: 128px;
-  background: var(--color-bg-3);
-  overflow: hidden;
+.row:hover .title {
+  color: var(--color-accent);
 }
 
-.coverImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--t-slow);
-}
-
-.card:hover .coverImg { transform: scale(1.03); }
-
-.coverPlaceholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg-3);
-}
-
-.badge {
-  position: absolute;
-  top: 0.625rem;
-  right: 0.625rem;
-}
-
-/* ── Content ─────────────────────────────────────────────────── */
-.content {
-  padding: 1.125rem;
+.main {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
   flex: 1;
 }
 
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+}
+
 .title {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--color-text);
   line-height: 1.3;
-  letter-spacing: -0.02em;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0;
 }
 
 .desc {
-  font-size: 0.8rem;
-  color: var(--color-text-3);
-  line-height: 1.5;
+  font-size: 0.82rem;
+  color: var(--color-text-2);
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  margin: 0;
 }
 
 .meta {
   display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  margin-top: 0.125rem;
-}
-
-.metaItem {
-  display: flex;
-  align-items: center;
-  gap: 0.275rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.85rem;
   font-size: 0.75rem;
   color: var(--color-text-3);
-  font-family: 'DM Mono', monospace;
+  margin-top: auto;
+  padding-top: 0.45rem;
 }
 
-.countdown {
+.footer {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  margin-top: 0.25rem;
-  padding-top: 0.625rem;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
   border-top: 1px solid var(--color-border);
 }
 
-.countdownLabel {
-  font-size: 0.68rem;
-  color: var(--color-text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 500;
-}
-
-/* ── CTA row ─────────────────────────────────────────────────── */
-.cta {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: auto;
-  padding-top: 0.625rem;
+.action {
   font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-primary);
-  transition: gap var(--t-fast);
+  font-weight: 600;
+  color: var(--color-accent);
+  white-space: nowrap;
 }
-
-.card:hover .cta { gap: 0.55rem; }

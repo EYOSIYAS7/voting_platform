@@ -17,19 +17,19 @@ const config = getDefaultConfig({
 });
 
 const darkRainbowTheme = darkTheme({
-  accentColor:           '#1b4dff',
-  accentColorForeground: 'white',
+  accentColor:           '#6B9E96',
+  accentColorForeground: '#161513',
   borderRadius:          'small',
   fontStack:             'system',
-  overlayBlur:           'small',
+  overlayBlur:           'none',
 });
 
 const lightRainbowTheme = lightTheme({
-  accentColor:           '#1F2261',
-  accentColorForeground: 'white',
+  accentColor:           '#1F5C57',
+  accentColorForeground: '#F7F6F2',
   borderRadius:          'small',
   fontStack:             'system',
-  overlayBlur:           'small',
+  overlayBlur:           'none',
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {

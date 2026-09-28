@@ -16,14 +16,14 @@ export function ElectionCardLoader({ electionId }: Props) {
 
   if (isLoading) {
     return (
-      <div className="card" style={{ height: '320px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="panel" style={{ padding: '1.5rem 1rem', minHeight: 120, display: 'flex', alignItems: 'center' }}>
         <div className="spinner" />
       </div>
     );
   }
 
   if (isError || !election || !election.exists) {
-    return null; // Don't render broken cards
+    return null;
   }
 
   return (

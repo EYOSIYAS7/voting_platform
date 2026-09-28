@@ -5,7 +5,6 @@ import { useAllElectionIds, useContractAddress } from '@/lib/hooks/useContract';
 import { VOTING_PLATFORM_ABI, Election } from '@/lib/abi/votingPlatform';
 import { useReadContracts } from 'wagmi';
 import { ElectionCard } from '@/components/ElectionCard';
-import { Search, Filter, ShieldAlert } from 'lucide-react';
 import styles from './elections.module.css';
 
 export default function ElectionsPage() {
@@ -112,60 +111,82 @@ export default function ElectionsPage() {
 
   const isLoading = isIdsLoading || isDetailsLoading;
 
+  const counts = useMemo(() => {
+    const byStatus = { Active: 0, Upcoming: 0, Registration: 0, Ended: 0, Pending: 0 };
+    processedElections.forEach(({ status }) => {
+      if (status in byStatus) byStatus[status as keyof typeof byStatus] += 1;
+    });
+    return byStatus;
+  }, [processedElections]);
+
   return (
-    <div className="container animate-fade-in">
-      {/* Page Header */}
-      <div className={styles.header}>
-        <div className={styles.titleRow}>
-          <div>
-            <h1 className={styles.title}>Browse Elections</h1>
-            <p className={styles.desc}>
-              Participate in active votes, view upcoming polls, and read finalized results.
-            </p>
-          </div>
-        </div>
-
-        {/* Controls: Filters & Search */}
-        <div className={styles.controls}>
-          <div className={styles.filters}>
-            {(['All', 'Active', 'Registration', 'Upcoming', 'Ended'] as const).map((filter) => (
-              <button
-                key={filter}
-                className={`${styles.filterBtn} ${activeFilter === filter ? styles.filterBtnActive : ''}`}
-                onClick={() => setActiveFilter(filter)}
-              >
-                {filter === 'Active' ? 'Live' : filter === 'Registration' ? 'Open Reg.' : filter}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.searchWrapper}>
-            <Search size={16} className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Search elections..."
-              className="form-input styles.searchInput"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: '2.5rem' }}
-            />
-          </div>
+    <div className="container">
+      <div className="page-head">
+        <div>
+          <h1>Elections</h1>
+          <p>Open votes, upcoming ballots, and closed results.</p>
         </div>
       </div>
 
-      {/* Grid Content */}
+      <div className="stat-row">
+        <div className="stat">
+          <span>Total</span>
+          <strong>{isLoading ? '—' : processedElections.length}</strong>
+        </div>
+        <div className="stat">
+          <span>Open</span>
+          <strong>{isLoading ? '—' : counts.Active}</strong>
+        </div>
+        <div className="stat">
+          <span>Registration</span>
+          <strong>{isLoading ? '—' : counts.Registration}</strong>
+        </div>
+        <div className="stat">
+          <span>Closed</span>
+          <strong>{isLoading ? '—' : counts.Ended}</strong>
+        </div>
+      </div>
+
+      <div className={styles.toolbar}>
+        <div className={styles.filters} role="tablist" aria-label="Filter elections">
+          {(['All', 'Active', 'Registration', 'Upcoming', 'Ended'] as const).map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              className={`${styles.filterBtn} ${activeFilter === filter ? styles.filterBtnActive : ''}`}
+              onClick={() => setActiveFilter(filter)}
+            >
+              {filter === 'Active' ? 'Open' : filter}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.searchWrapper}>
+          <label htmlFor="election-search" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
+            Search elections
+          </label>
+          <input
+            id="election-search"
+            type="search"
+            placeholder="Search by title or description"
+            className={`form-input ${styles.searchInput}`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       {isLoading ? (
         <div className={styles.loaderContainer}>
           <div className="spinner" />
         </div>
       ) : filteredElections.length === 0 ? (
-        <div className="card empty-state" style={{ margin: '2rem 0 6rem' }}>
-          <ShieldAlert size={48} />
-          <h3>No elections match your criteria</h3>
-          <p>Try resetting your filter, checking your spelling, or creating a new election in the Admin panel.</p>
+        <div className="empty-state">
+          <h3>No matching elections</h3>
+          <p>Clear the filter or search, or create an election in admin.</p>
         </div>
       ) : (
-        <div className={styles.grid}>
+        <div className={styles.list}>
           {filteredElections.map(({ election, candidateCount }) => (
             <ElectionCard
               key={election.id.toString()}
