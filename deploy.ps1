@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 # Default variables
 $ImageName = "voting_platform"
 $Namespace = "bc-edge-apps"
-$DefaultTag = "latest"
+$DefaultTag = Get-Date -Format "yyyyMMdd-HHmmss"
 
 # Build-time variables for Besu network defaults
 $NextPublicContractAddress = "0x8c0c3B8f93d627519E7C2451e52B834Ae240598a"
@@ -52,7 +52,7 @@ docker push "$FullImageName"
 
 Write-Host "Step 3: Preparing Kubernetes manifests..." -ForegroundColor Yellow
 $DeploymentContent = Get-Content -Raw -Path "k8s/deployment.yaml"
-$UpdatedDeploymentContent = $DeploymentContent -replace "image: ghcr.io/eyosiyas7/voting_platform:latest", "image: $FullImageName"
+$UpdatedDeploymentContent = $DeploymentContent -replace 'image:\s*ghcr\.io/.+/voting_platform:[^\s]+', "image: $FullImageName"
 
 $TempDeploymentFile = [System.IO.Path]::GetTempFileName()
 Set-Content -Path $TempDeploymentFile -Value $UpdatedDeploymentContent
