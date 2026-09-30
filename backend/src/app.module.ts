@@ -26,6 +26,9 @@ import { Election } from './modules/election/entities/election.entity.js';
 import { EligibilityRule } from './modules/election/entities/eligibility-rule.entity.js';
 import { ElectionVoter } from './modules/election/entities/election-voter.entity.js';
 
+// Phase 4 Entities
+import { Candidate } from './modules/candidate/entities/candidate.entity.js';
+
 // Phase 1 Feature Modules
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { OrganizationalUnitModule } from './modules/organizational-unit/organizational-unit.module.js';
@@ -38,6 +41,9 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 
 // Phase 3 Feature Modules
 import { ElectionModule } from './modules/election/election.module.js';
+
+// Phase 4 Feature Modules
+import { CandidateModule } from './modules/candidate/candidate.module.js';
 
 @Module({
   imports: [
@@ -83,6 +89,8 @@ import { ElectionModule } from './modules/election/election.module.js';
           Election,
           EligibilityRule,
           ElectionVoter,
+          // Phase 4
+          Candidate,
         ],
         synchronize: process.env.APP_ENV !== 'production',  // auto-migrate in dev only
         logging:     process.env.APP_ENV === 'development',
@@ -101,6 +109,9 @@ import { ElectionModule } from './modules/election/election.module.js';
 
     // Phase 3
     ElectionModule,
+
+    // Phase 4
+    CandidateModule,
   ],
 
   providers: [

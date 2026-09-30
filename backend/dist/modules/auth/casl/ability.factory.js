@@ -41,6 +41,9 @@ let AbilityFactory = class AbilityFactory {
             can('update', 'profile');
             can('create', 'wallet-binding');
             can('read', 'wallet-binding');
+            can('read', 'candidate');
+            can('create', 'candidate');
+            can('update', 'candidate');
         }
         if (roles.includes(SystemRole.AUDITOR)) {
             can('read', 'election');

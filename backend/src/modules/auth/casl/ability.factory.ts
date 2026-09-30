@@ -56,13 +56,17 @@ export class AbilityFactory {
 
     if (roles.includes(SystemRole.EMPLOYEE)) {
       // Self-service
-      can('read', 'election');       // elections they are eligible for
-      can('create', 'vote');          // cast vote (enforced by eligibility engine)
-      can('read', 'result');          // view results of completed elections
-      can('read', 'profile');         // own profile
-      can('update', 'profile');       // update own profile
+      can('read', 'election');          // elections they are eligible for
+      can('create', 'vote');            // cast vote (enforced by eligibility engine)
+      can('read', 'result');            // view results of completed elections
+      can('read', 'profile');           // own profile
+      can('update', 'profile');         // update own profile
       can('create', 'wallet-binding'); // bind their own wallet
       can('read',   'wallet-binding'); // view own binding
+      // Candidate self-service
+      can('read',   'candidate');       // view approved candidates for any election
+      can('create', 'candidate');       // self-nominate
+      can('update', 'candidate');       // update own pending candidacy
     }
 
     if (roles.includes(SystemRole.AUDITOR)) {

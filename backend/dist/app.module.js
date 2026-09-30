@@ -23,6 +23,7 @@ import { WalletBinding } from './modules/auth/entities/wallet-binding.entity.js'
 import { Election } from './modules/election/entities/election.entity.js';
 import { EligibilityRule } from './modules/election/entities/eligibility-rule.entity.js';
 import { ElectionVoter } from './modules/election/entities/election-voter.entity.js';
+import { Candidate } from './modules/candidate/entities/candidate.entity.js';
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { OrganizationalUnitModule } from './modules/organizational-unit/organizational-unit.module.js';
 import { PositionModule } from './modules/position/position.module.js';
@@ -30,6 +31,7 @@ import { EmployeeModule } from './modules/employee/employee.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 import { ElectionModule } from './modules/election/election.module.js';
+import { CandidateModule } from './modules/candidate/candidate.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -67,6 +69,7 @@ AppModule = __decorate([
                         Election,
                         EligibilityRule,
                         ElectionVoter,
+                        Candidate,
                     ],
                     synchronize: process.env.APP_ENV !== 'production',
                     logging: process.env.APP_ENV === 'development',
@@ -78,6 +81,7 @@ AppModule = __decorate([
             EmployeeModule,
             AuthModule,
             ElectionModule,
+            CandidateModule,
         ],
         providers: [
             {
