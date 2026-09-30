@@ -21,7 +21,7 @@
   right: -10vw;
   width: clamp(380px, 55vw, 800px);
   height: clamp(380px, 55vw, 800px);
-  background: radial-gradient(ellipse at center, rgba(31, 92, 87, 0.13) 0%, transparent 65%);
+  background: radial-gradient(ellipse at center, rgba(59, 100, 175, 0.16) 0%, transparent 65%);
   border-radius: 50%;
   will-change: transform;
   animation: floatA 18s ease-in-out infinite alternate;
@@ -33,7 +33,7 @@
   left: -12vw;
   width: clamp(280px, 45vw, 600px);
   height: clamp(280px, 45vw, 600px);
-  background: radial-gradient(ellipse at center, rgba(47, 107, 79, 0.09) 0%, transparent 65%);
+  background: radial-gradient(ellipse at center, rgba(107, 74, 120, 0.14) 0%, transparent 65%);
   border-radius: 50%;
   animation: floatB 22s ease-in-out infinite alternate;
 }
@@ -42,8 +42,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(31, 92, 87, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 92, 87, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(59, 100, 175, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 100, 175, 0.05) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
 }
@@ -144,17 +144,17 @@
 }
 
 .chipDot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent-dim);
-  animation: pulse 2.5s ease-in-out infinite;
+  background: var(--color-insa-red);
+  box-shadow: 0 0 0 2px var(--color-insa-red-dim);
+  animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 2px var(--color-accent-dim); }
-  50%       { box-shadow: 0 0 0 5px transparent; }
+  0%, 100% { box-shadow: 0 0 0 2px var(--color-insa-red-dim); }
+  50%       { box-shadow: 0 0 0 6px transparent; }
 }
 
 .heroTitle {
@@ -203,19 +203,19 @@
   letter-spacing: -0.01em;
   border: 1px solid var(--color-accent);
   transition: background-color var(--t-fast), transform 0.12s ease, box-shadow 0.12s ease;
-  box-shadow: 0 2px 8px rgba(31, 92, 87, 0.22);
+  box-shadow: 0 2px 10px rgba(45, 87, 168, 0.28);
 }
 
 .ctaPrimary:hover {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(31, 92, 87, 0.3);
+  box-shadow: 0 4px 18px rgba(45, 87, 168, 0.40);
 }
 
 .ctaPrimary:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(31, 92, 87, 0.22);
+  box-shadow: 0 2px 8px rgba(45, 87, 168, 0.28);
 }
 
 .ctaSecondary {
@@ -509,22 +509,22 @@
 
 .dualLink:hover { gap: 0.65rem; }
 
-/* ── Accent modifier (Admin Portal card) ── */
+/* ── Accent modifier (Admin Portal card: INSA Midnight Navy & Shield Glow) ── */
 .dualCard.dualCardAccent,
 .dualCardAccent {
-  background: #174843;
-  border-color: #23635d;
+  background: linear-gradient(145deg, #000C2C 0%, #0C1E4A 100%);
+  border-color: #2D57A8;
 }
 
 [data-theme="dark"] .dualCard.dualCardAccent,
 [data-theme="dark"] .dualCardAccent {
-  background: #153e3a;
-  border-color: #245852;
+  background: linear-gradient(145deg, #030F2C 0%, #0A1E4D 100%);
+  border-color: #3B64AF;
 }
 
 .dualCard.dualCardAccent:hover,
 .dualCardAccent:hover {
-  box-shadow: 0 8px 28px rgba(23, 72, 67, 0.32);
+  box-shadow: 0 8px 30px rgba(45, 87, 168, 0.35);
 }
 
 .dualCard.dualCardAccent h3,

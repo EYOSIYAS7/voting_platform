@@ -1,34 +1,50 @@
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap');
 
-/* ── Design tokens ───────────────────────────────────────────── */
+/* ── Design tokens: INSA Sovereign Identity ─────────────────── */
 :root {
-  --font-sans:  'Source Sans 3', 'Segoe UI', sans-serif;
+  --font-sans:  'Source Sans 3', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: 'Source Serif 4', 'Georgia', serif;
 
-  --color-bg:        #EEECE6;
-  --color-surface:   #F4F2EC;
+  /* Base Canvas */
+  --color-bg:        #F2F5FB;
+  --color-surface:   #FFFFFF;
   --color-elevated:  #FFFFFF;
-  --color-sidebar:   #E7E4DC;
-  --color-text:      #181818;
-  --color-text-2:    #5C5A55;
-  --color-text-3:    #8A877F;
-  --color-border:    #DDDAD3;
-  --color-border-2:  #D0CDC4;
+  --color-sidebar:   #E7ECF7;
 
-  --color-accent:      #1F5C57;
-  --color-accent-hover:#174843;
-  --color-accent-dim:  rgba(31, 92, 87, 0.1);
-  --color-on-accent:   #F7F6F2;
+  /* Typography (Anchored by INSA Midnight Navy #000C2C) */
+  --color-text:      #000C2C;
+  --color-text-2:    #354868;
+  --color-text-3:    #667A9E;
 
-  --color-success: #2F6B4F;
-  --color-warning: #8A5A28;
-  --color-danger:  #A33B32;
+  /* Structural Dividers */
+  --color-border:    #D2DDF0;
+  --color-border-2:  #B6C8E6;
 
-  --status-active:       #2F6B4F;
-  --status-upcoming:     #1F5C57;
-  --status-pending:      #8A5A28;
-  --status-ended:        #8A877F;
-  --status-registration: #3D5A73;
+  /* Primary Accent: INSA Shield Blue (#3B64AF family) */
+  --color-accent:      #2D57A8;
+  --color-accent-hover:#1E3E7E;
+  --color-accent-dim:  rgba(45, 87, 168, 0.10);
+  --color-accent-subtle: rgba(45, 87, 168, 0.05);
+  --color-on-accent:   #FFFFFF;
+
+  /* INSA Specialized Logo Accents */
+  --color-insa-navy:       #000C2C;
+  --color-insa-blue:       #3B64AF;
+  --color-insa-purple:     #6B4A78;
+  --color-insa-red:        #D92828;
+  --color-insa-purple-dim: rgba(107, 74, 120, 0.12);
+  --color-insa-red-dim:    rgba(217, 40, 40, 0.12);
+
+  /* Functional Status Colors */
+  --color-success: #137A4D;
+  --color-warning: #B5651D;
+  --color-danger:  #D92828;
+
+  --status-active:       #137A4D;
+  --status-upcoming:     #2D57A8;
+  --status-pending:      #B5651D;
+  --status-ended:        #667A9E;
+  --status-registration: #6B4A78;
 
   --space-1:  0.25rem;
   --space-2:  0.5rem;
@@ -43,9 +59,9 @@
   --r-md: 6px;
   --r-lg: 8px;
 
-  --shadow-sm:    0 1px 2px rgba(24, 24, 24, 0.04);
-  --shadow-panel: 0 1px 3px rgba(24, 24, 24, 0.05);
-  --shadow-modal: 0 12px 40px rgba(24, 24, 24, 0.14);
+  --shadow-sm:    0 1px 3px rgba(0, 12, 44, 0.05);
+  --shadow-panel: 0 2px 8px rgba(0, 12, 44, 0.07);
+  --shadow-modal: 0 16px 48px rgba(0, 12, 44, 0.16);
 
   --t-fast: 120ms ease;
   --t-base: 180ms ease;
@@ -56,34 +72,50 @@
 }
 
 [data-theme="dark"] {
-  --color-bg:        #141312;
-  --color-surface:   #1B1A17;
-  --color-elevated:  #23211D;
-  --color-sidebar:   #121110;
-  --color-text:      #F2EFE8;
-  --color-text-2:    #B0ADA5;
-  --color-text-3:    #7A776F;
-  --color-border:    #2E2C28;
-  --color-border-2:  #3D3A34;
+  /* INSA Cyber Command Dark Mode (Deep Midnight #000C2C Ground) */
+  --color-bg:        #00081C;
+  --color-surface:   #04102C;
+  --color-elevated:  #081940;
+  --color-sidebar:   #010C24;
 
-  --color-accent:      #6B9E96;
-  --color-accent-hover:#87B5AE;
-  --color-accent-dim:  rgba(107, 158, 150, 0.14);
-  --color-on-accent:   #161513;
+  /* Text */
+  --color-text:      #F0F4FC;
+  --color-text-2:    #9CB0D4;
+  --color-text-3:    #5B729E;
 
-  --color-success: #7DAA90;
-  --color-warning: #C49A6C;
-  --color-danger:  #D08078;
+  /* Borders */
+  --color-border:    #122754;
+  --color-border-2:  #1D3B78;
 
-  --status-active:       #7DAA90;
-  --status-upcoming:     #6B9E96;
-  --status-pending:      #C49A6C;
-  --status-ended:        #7A776F;
-  --status-registration: #8AA3B5;
+  /* Primary Accent: Electric INSA Shield Blue */
+  --color-accent:      #4D81EC;
+  --color-accent-hover:#6A9AF5;
+  --color-accent-dim:  rgba(77, 129, 236, 0.18);
+  --color-accent-subtle: rgba(77, 129, 236, 0.08);
+  --color-on-accent:   #00081C;
 
-  --shadow-sm:    0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.28);
-  --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.45);
+  /* INSA Specialized Logo Accents (Dark Mode) */
+  --color-insa-navy:       #000C2C;
+  --color-insa-blue:       #4D81EC;
+  --color-insa-purple:     #9D72AF;
+  --color-insa-red:        #F04D4D;
+  --color-insa-purple-dim: rgba(157, 114, 175, 0.22);
+  --color-insa-red-dim:    rgba(240, 77, 77, 0.18);
+
+  /* Functional Status Colors */
+  --color-success: #2CC584;
+  --color-warning: #E8A155;
+  --color-danger:  #F04D4D;
+
+  --status-active:       #2CC584;
+  --status-upcoming:     #4D81EC;
+  --status-pending:      #E8A155;
+  --status-ended:        #5B729E;
+  --status-registration: #9D72AF;
+
+  --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-panel: 0 4px 18px rgba(0, 4, 18, 0.65);
+  --shadow-modal: 0 20px 60px rgba(0, 2, 12, 0.85);
 }
 
 /* ── Reset ───────────────────────────────────────────────────── */

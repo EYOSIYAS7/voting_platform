@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -130,7 +130,7 @@ export default function LandingPage() {
           >
             <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
-          Voting Platform
+          INSA E-Voting
         </span>
         <nav className={styles.topNav} aria-label="Quick access">
           <Link href="/dashboard" className={styles.topLink}>
@@ -153,7 +153,7 @@ export default function LandingPage() {
         >
           <div className={styles.heroChip}>
             <span className={styles.chipDot} aria-hidden="true" />
-            Live on Hyperledger Besu
+            Information Network Security Administration · Besu Ledger
           </div>
 
           <h1 id="hero-heading" className={styles.heroTitle}>
@@ -163,9 +163,9 @@ export default function LandingPage() {
           </h1>
 
           <p className={styles.heroSub}>
-            A cryptographically-secured, on-chain voting system for
-            organisations that demand absolute transparency in every election
-            they run.
+            A cryptographically secured, institutional voting platform for the
+            Information Network Security Administration (INSA), engineered for
+            absolute integrity, tamper-proof verification, and democratic transparency.
           </p>
 
           <div className={styles.heroCtas}>
@@ -395,9 +395,9 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className={styles.footer}>
         <span>
-          <strong>Voting Platform</strong>
+          <strong>Information Network Security Administration (INSA)</strong> · Secure Voting Platform
         </span>
-        <span>Hyperledger Besu · {new Date().getFullYear()}</span>
+        <span>Hyperledger Besu Enterprise · {new Date().getFullYear()}</span>
       </footer>
     </div>
   );

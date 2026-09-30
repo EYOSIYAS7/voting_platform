@@ -17,16 +17,16 @@ const config = getDefaultConfig({
 });
 
 const darkRainbowTheme = darkTheme({
-  accentColor:           '#6B9E96',
-  accentColorForeground: '#161513',
+  accentColor:           '#4D81EC',
+  accentColorForeground: '#00081C',
   borderRadius:          'small',
   fontStack:             'system',
   overlayBlur:           'none',
 });
 
 const lightRainbowTheme = lightTheme({
-  accentColor:           '#1F5C57',
-  accentColorForeground: '#F7F6F2',
+  accentColor:           '#2D57A8',
+  accentColorForeground: '#FFFFFF',
   borderRadius:          'small',
   fontStack:             'system',
   overlayBlur:           'none',

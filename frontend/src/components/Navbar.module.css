@@ -24,6 +24,9 @@
   letter-spacing: -0.02em;
   color: var(--color-text);
   padding: 0.35rem 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .links {
