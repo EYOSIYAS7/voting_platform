@@ -21,7 +21,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Immutable Ballots",
-    body: "Every vote is a signed transaction written to the ledger. Once cast, it cannot be altered or deleted.",
+    body: "Every vote is a signed transaction written to the ledger. Once cast, it cannot be altered, forged, or deleted.",
   },
   {
     icon: (
@@ -40,7 +40,7 @@ const FEATURES = [
       </svg>
     ),
     title: "Real-time Tallying",
-    body: "Results update with every new block. No waiting period — the tally is always live and verifiable.",
+    body: "Results update with every new block. No waiting period — the tally is continuously synchronized and verifiable.",
   },
   {
     icon: (
@@ -58,8 +58,8 @@ const FEATURES = [
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
     ),
-    title: "Admin Controls",
-    body: "Administrators approve candidates, manage election windows, and maintain organizational integrity.",
+    title: "Organizational Hierarchy",
+    body: "Dynamic database-driven directorates, divisions, and positions govern scoped voter and candidate eligibility.",
   },
   {
     icon: (
@@ -77,25 +77,25 @@ const FEATURES = [
       </svg>
     ),
     title: "Transparent Audit",
-    body: "Full on-chain history. Any participant can audit the complete record of all submitted votes at any time.",
+    body: "Full on-chain history. Any auditor can mathematically verify the complete cryptoledger trail at any time.",
   },
 ];
 
 const STEPS = [
   {
     num: "01",
-    label: "Connect your wallet",
-    desc: "Use MetaMask or any Web3 wallet to authenticate your identity on the Besu network.",
+    label: "Authenticate Employee Identity",
+    desc: "Sign in with your verified institutional account. The system evaluates your organizational scope and eligibility.",
   },
   {
     num: "02",
-    label: "Browse open elections",
-    desc: "View upcoming and active elections for your organization — all pulled directly from the chain.",
+    label: "Sign with Bound Web3 Wallet",
+    desc: "Connect your MetaMask or institutional wallet verified through cryptographic SIWE challenge-response.",
   },
   {
     num: "03",
-    label: "Cast your ballot",
-    desc: "Submit a signed transaction. Your vote is recorded permanently and counted immediately.",
+    label: "Cast Immutable On-Chain Vote",
+    desc: "Submit an EVM-signed transaction to the Hyperledger Besu smart contract. Your ballot is sealed forever.",
   },
 ];
 
@@ -118,17 +118,17 @@ export default function LandingPage() {
       <header className={styles.topbar}>
         <span className={styles.wordmark}>
           <svg
-            width="20"
-            height="20"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
           >
-            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
           INSA E-Voting
         </span>
@@ -146,77 +146,147 @@ export default function LandingPage() {
       </header>
 
       <main id="main">
-        {/* ── Hero ── */}
+        {/* ── Hero Section (with layered visual stage) ── */}
         <section
           className={`${styles.hero} ${mounted ? styles.heroVisible : ""}`}
           aria-labelledby="hero-heading"
         >
-          <div className={styles.heroChip}>
-            <span className={styles.chipDot} aria-hidden="true" />
-            Information Network Security Administration · Besu Ledger
-          </div>
+          <div className={styles.heroContentGrid}>
+            {/* Left Column: Text & Actions */}
+            <div className={styles.heroTextCol}>
+              <h1 id="hero-heading" className={styles.heroTitle}>
+                Votes that cannot
+                <br />
+                <em>be questioned.</em>
+              </h1>
 
-          <h1 id="hero-heading" className={styles.heroTitle}>
-            Votes that cannot
-            <br />
-            <em>be questioned.</em>
-          </h1>
+              <p className={styles.heroSub}>
+                A cryptographically secured, institutional voting platform for
+                the Information Network Security Administration (INSA),
+                engineered for absolute integrity, tamper-proof verification,
+                and democratic transparency.
+              </p>
 
-          <p className={styles.heroSub}>
-            A cryptographically secured, institutional voting platform for the
-            Information Network Security Administration (INSA), engineered for
-            absolute integrity, tamper-proof verification, and democratic transparency.
-          </p>
-
-          <div className={styles.heroCtas}>
-            <Link
-              href="/dashboard"
-              id="cta-dashboard"
-              className={styles.ctaPrimary}
-            >
-              Go to Dashboard
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-            <Link href="/admin" id="cta-admin" className={styles.ctaSecondary}>
-              Admin Panel
-            </Link>
-          </div>
-
-          <div
-            className={styles.heroStats}
-            role="list"
-            aria-label="Platform statistics"
-          >
-            {[
-              { val: "Besu", label: "Network" },
-              { val: "1 vote", label: "Per wallet rule" },
-              { val: "100%", label: "On-chain storage" },
-              { val: "Live", label: "Tally updates" },
-            ].map(({ val, label }) => (
-              <div key={label} className={styles.heroStat} role="listitem">
-                <strong>{val}</strong>
-                <span>{label}</span>
+              <div className={styles.heroCtas}>
+                <Link
+                  href="/dashboard"
+                  id="cta-dashboard"
+                  className={styles.ctaPrimary}
+                >
+                  Go to Dashboard
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+                <Link
+                  href="/admin"
+                  id="cta-admin"
+                  className={styles.ctaSecondary}
+                >
+                  Admin Panel
+                </Link>
               </div>
-            ))}
+
+              <div
+                className={styles.heroStats}
+                role="list"
+                aria-label="Platform statistics"
+              >
+                {[
+                  { val: "Besu", label: "Private Ledger" },
+                  { val: "1-Vote", label: "Cryptographic Rule" },
+                  { val: "100%", label: "On-Chain Audit" },
+                  { val: "Instant", label: "Live Tally" },
+                ].map(({ val, label }) => (
+                  <div key={label} className={styles.heroStat} role="listitem">
+                    <strong>{val}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column: Layered Holographic Ballot Stage (voting.png & voting2.jpg) */}
+            <div className={styles.heroVisualStage} aria-hidden="true">
+              {/* Primary Digital Ballot Card (voting2.jpg) */}
+              <div className={styles.stageCardPrimary}>
+                <div className={styles.stageCardHeader}>
+                  <div className={styles.stageLedgerBadge}>
+                    <span className={styles.stageLedgerDot} />
+                    Besu Ledger Verified
+                  </div>
+                </div>
+
+                <div className={styles.stageImageWrap}>
+                  <img
+                    src="/voting2.jpg"
+                    alt="Cryptographic ballot submission on the Besu blockchain"
+                    className={styles.stageImage}
+                  />
+                  <div className={styles.stageImageOverlay} />
+                </div>
+
+                <div className={styles.stageCardFooter}>
+                  <div className={styles.stageMeta}>
+                    <span className={styles.stageMetaTitle}>
+                      E-Ballot Block Stream
+                    </span>
+                    <span className={styles.stageMetaHash}>
+                      0x71...88c4 · Block #519,420
+                    </span>
+                  </div>
+                  <div className={styles.stageVerifyIcon}>
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Sealed
+                  </div>
+                </div>
+              </div>
+
+              {/* Secondary Floating Democratic Card (voting.png) */}
+              <div className={styles.stageCardSecondary}>
+                <div className={styles.stageThumbWrap}>
+                  <img
+                    src="/voting.png"
+                    alt="Collective institutional voting consensus"
+                    className={styles.stageThumb}
+                  />
+                </div>
+                <div className={styles.stageThumbBanner}>
+                  <span className={styles.stageThumbText}>
+                    Collective Mandate
+                  </span>
+                  <span className={styles.stageThumbSub}>INSA Scoped Vote</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* ── Features grid ── */}
         <section className={styles.features} aria-labelledby="features-heading">
           <div className={styles.sectionHeader}>
-            <h2 id="features-heading">Built for integrity</h2>
+            <h2 id="features-heading">Built for Sovereign Integrity</h2>
             <p>
               Every design decision was made with one goal: elections that
               anyone can verify and no one can manipulate.
@@ -251,14 +321,14 @@ export default function LandingPage() {
                 verified ballot
               </h2>
               <p>
-                Participation takes three steps. Your identity stays with your
-                wallet no accounts, no passwords, no data stored outside the
-                chain.
+                Participation takes three secure steps. Your identity stays
+                protected through role-based organizational scoping and
+                cryptographically signed transactions.
               </p>
               <Link
                 href="/dashboard"
                 className={styles.ctaPrimary}
-                style={{ marginTop: "1.5rem", display: "inline-flex" }}
+                style={{ marginTop: "1.75rem", display: "inline-flex" }}
               >
                 Start voting
                 <svg
@@ -292,101 +362,119 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Dual CTA ── */}
+        {/* ── Dual CTA with image backdrops ── */}
         <section className={styles.dualCta} aria-labelledby="dual-cta-heading">
           <h2 id="dual-cta-heading" className="sr-only">
             Choose your role
           </h2>
           <div className={styles.dualGrid}>
+            {/* Voter Portal Card (with voting2.jpg ambient backdrop) */}
             <div className={styles.dualCard} id="voter-portal">
-              <div className={styles.dualCardIcon} aria-hidden="true">
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div
+                className={styles.dualCardBackdrop}
+                style={{ backgroundImage: "url('/voting2.jpg')" }}
+                aria-hidden="true"
+              />
+              <div className={styles.dualCardContent}>
+                <div className={styles.dualCardIcon} aria-hidden="true">
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
+                <h3>Voter Dashboard</h3>
+                <p>
+                  Browse open elections, review approved candidates, and cast
+                  your signed on-chain ballot. Your vote is permanent,
+                  tamper-evident, and publicly verifiable.
+                </p>
+                <Link
+                  href="/dashboard"
+                  id="link-voter-dashboard"
+                  className={styles.dualLink}
                 >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+                  Enter Dashboard
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
-              <h3>Voter Dashboard</h3>
-              <p>
-                Browse open elections, review candidates, and cast your vote.
-                Your ballot is permanent and publicly verifiable.
-              </p>
-              <Link
-                href="/dashboard"
-                id="link-voter-dashboard"
-                className={styles.dualLink}
-              >
-                Enter Dashboard
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </Link>
             </div>
 
+            {/* Admin Console Card (with voting.png ambient backdrop) */}
             <div
               className={`${styles.dualCard} ${styles.dualCardAccent}`}
               id="admin-portal"
             >
-              <div className={styles.dualCardIcon} aria-hidden="true">
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div
+                className={styles.dualCardBackdrop}
+                style={{ backgroundImage: "url('/voting.png')" }}
+                aria-hidden="true"
+              />
+              <div className={styles.dualCardContent}>
+                <div className={styles.dualCardIcon} aria-hidden="true">
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
+                  </svg>
+                </div>
+                <h3>Admin Console</h3>
+                <p>
+                  Provision elections, configure organizational eligibility,
+                  approve candidates, and monitor blockchain consensus in real
+                  time with complete cryptographic auditing.
+                </p>
+                <Link
+                  href="/admin"
+                  id="link-admin-panel"
+                  className={`${styles.dualLink} ${styles.dualLinkAccent}`}
                 >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
-                </svg>
+                  Open Admin Console
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
               </div>
-              <h3>Admin Panel</h3>
-              <p>
-                Create elections, approve candidates, manage organizational
-                units, and monitor all on-chain activity in real time.
-              </p>
-              <Link
-                href="/admin"
-                id="link-admin-panel"
-                className={`${styles.dualLink} ${styles.dualLinkAccent}`}
-              >
-                Open Admin Panel
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </Link>
             </div>
           </div>
         </section>
@@ -395,7 +483,8 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className={styles.footer}>
         <span>
-          <strong>Information Network Security Administration (INSA)</strong> · Secure Voting Platform
+          <strong>Information Network Security Administration (INSA)</strong> ·
+          Sovereign E-Voting Platform
         </span>
         <span>Hyperledger Besu Enterprise · {new Date().getFullYear()}</span>
       </footer>
