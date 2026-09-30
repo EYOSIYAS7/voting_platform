@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/lib/context/ThemeContext';
 import { Providers } from './providers';
-import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
   title:       'Voting Platform',
@@ -24,19 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider>
           <Providers>
-            <div className="app-shell">
-              <Navbar />
-              <div className="workspace">
-                <a href="#main" className="skip-link">Skip to content</a>
-                <main id="main" style={{ flex: 1 }}>
-                  {children}
-                </main>
-                <footer className="site-footer">
-                  <strong>Voting Platform</strong>
-                  <span>Hyperledger Besu · {new Date().getFullYear()}</span>
-                </footer>
-              </div>
-            </div>
+            {children}
           </Providers>
         </ThemeProvider>
       </body>

@@ -17,7 +17,7 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const links = [
-    { href: "/", label: "Overview", exact: true },
+    { href: "/dashboard", label: "Overview", exact: true },
     { href: "/elections", label: "Elections", exact: false },
     ...(isAdmin ? [{ href: "/admin", label: "Admin", exact: false }] : []),
   ];
@@ -34,7 +34,7 @@ export function Navbar() {
         className={`${styles.sidebar} ${menuOpen ? styles.sidebarOpen : ""}`}
         aria-label="Primary"
       >
-        <Link href="/" className={styles.logo} onClick={closeMenu}>
+        <Link href="/" className={styles.logo} onClick={closeMenu} title="Back to landing page">
           Voting Platform
         </Link>
 

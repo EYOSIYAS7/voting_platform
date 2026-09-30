@@ -5,6 +5,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -14,10 +15,17 @@ import { Organization } from './modules/organization/organization.entity.js';
 import { OrganizationalUnit } from './modules/organizational-unit/organizational-unit.entity.js';
 import { Position } from './modules/position/position.entity.js';
 import { Employee } from './modules/employee/employee.entity.js';
+import { UserAccount } from './modules/auth/entities/user-account.entity.js';
+import { Role } from './modules/auth/entities/role.entity.js';
+import { Permission } from './modules/auth/entities/permission.entity.js';
+import { UserRoleScope } from './modules/auth/entities/user-role-scope.entity.js';
+import { WalletBinding } from './modules/auth/entities/wallet-binding.entity.js';
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { OrganizationalUnitModule } from './modules/organizational-unit/organizational-unit.module.js';
 import { PositionModule } from './modules/position/position.module.js';
 import { EmployeeModule } from './modules/employee/employee.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -47,6 +55,11 @@ AppModule = __decorate([
                         OrganizationalUnit,
                         Position,
                         Employee,
+                        UserAccount,
+                        Role,
+                        Permission,
+                        UserRoleScope,
+                        WalletBinding,
                     ],
                     synchronize: process.env.APP_ENV !== 'production',
                     logging: process.env.APP_ENV === 'development',
@@ -56,6 +69,13 @@ AppModule = __decorate([
             OrganizationalUnitModule,
             PositionModule,
             EmployeeModule,
+            AuthModule,
+        ],
+        providers: [
+            {
+                provide: APP_GUARD,
+                useClass: JwtAuthGuard,
+            },
         ],
     })
 ], AppModule);

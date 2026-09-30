@@ -11,7 +11,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 import { Controller, Get, Post, Patch, Delete, Body, Param, ParseUUIDPipe, Query, } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { OrganizationalUnitService } from './organizational-unit.service.js';
 import { CreateOrganizationalUnitDto, UpdateOrganizationalUnitDto, } from './dto/organizational-unit.dto.js';
 let OrganizationalUnitController = class OrganizationalUnitController {
@@ -113,6 +113,7 @@ __decorate([
 ], OrganizationalUnitController.prototype, "remove", null);
 OrganizationalUnitController = __decorate([
     ApiTags('organizational-units'),
+    ApiBearerAuth(),
     Controller('organizational-units'),
     __metadata("design:paramtypes", [OrganizationalUnitService])
 ], OrganizationalUnitController);

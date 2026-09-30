@@ -1,7 +1,7 @@
 import {
   Controller, Get, Post, Patch, Delete, Body, Param, ParseUUIDPipe, Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { OrganizationalUnitService } from './organizational-unit.service.js';
 import {
   CreateOrganizationalUnitDto,
@@ -9,6 +9,7 @@ import {
 } from './dto/organizational-unit.dto.js';
 
 @ApiTags('organizational-units')
+@ApiBearerAuth()
 @Controller('organizational-units')
 export class OrganizationalUnitController {
   constructor(private readonly service: OrganizationalUnitService) {}

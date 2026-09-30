@@ -1,11 +1,12 @@
 import {
   Controller, Get, Post, Patch, Delete, Body, Param, ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrganizationService } from './organization.service.js';
 import { CreateOrganizationDto, UpdateOrganizationDto } from './dto/organization.dto.js';
 
 @ApiTags('organizations')
+@ApiBearerAuth()
 @Controller('organizations')
 export class OrganizationController {
   constructor(private readonly service: OrganizationService) {}

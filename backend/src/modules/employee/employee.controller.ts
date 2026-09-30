@@ -2,12 +2,13 @@ import {
   Controller, Get, Post, Patch, Delete, Body, Param,
   ParseUUIDPipe, Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service.js';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/employee.dto.js';
 import { EmployeeStatus } from './employee.entity.js';
 
 @ApiTags('employees')
+@ApiBearerAuth()
 @Controller('employees')
 export class EmployeeController {
   constructor(private readonly service: EmployeeService) {}

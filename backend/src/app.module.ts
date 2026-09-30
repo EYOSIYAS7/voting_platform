@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -7,17 +8,28 @@ import { ThrottlerModule } from '@nestjs/throttler';
 // Config
 import databaseConfig from './config/database.config.js';
 
-// Entities
+// Phase 1 Entities
 import { Organization } from './modules/organization/organization.entity.js';
 import { OrganizationalUnit } from './modules/organizational-unit/organizational-unit.entity.js';
 import { Position } from './modules/position/position.entity.js';
 import { Employee } from './modules/employee/employee.entity.js';
 
-// Modules
+// Phase 2 Entities
+import { UserAccount } from './modules/auth/entities/user-account.entity.js';
+import { Role } from './modules/auth/entities/role.entity.js';
+import { Permission } from './modules/auth/entities/permission.entity.js';
+import { UserRoleScope } from './modules/auth/entities/user-role-scope.entity.js';
+import { WalletBinding } from './modules/auth/entities/wallet-binding.entity.js';
+
+// Phase 1 Feature Modules
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { OrganizationalUnitModule } from './modules/organizational-unit/organizational-unit.module.js';
 import { PositionModule } from './modules/position/position.module.js';
 import { EmployeeModule } from './modules/employee/employee.module.js';
+
+// Phase 2 Feature Modules
+import { AuthModule } from './modules/auth/auth.module.js';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 
 @Module({
   imports: [
@@ -33,7 +45,7 @@ import { EmployeeModule } from './modules/employee/employee.module.js';
       { ttl: 60_000, limit: 100 },   // 100 requests per minute globally
     ]),
 
-    // ── Event Bus (for audit logging later) ──────────────────────────────────
+    // ── Event Bus (audit logging) ─────────────────────────────────────────────
     EventEmitterModule.forRoot(),
 
     // ── Database ─────────────────────────────────────────────────────────────
@@ -47,11 +59,18 @@ import { EmployeeModule } from './modules/employee/employee.module.js';
         username:    config.get<string>('database.username'),
         password:    config.get<string>('database.password'),
         database:    config.get<string>('database.database'),
-        entities:    [
+        entities: [
+          // Phase 1
           Organization,
           OrganizationalUnit,
           Position,
           Employee,
+          // Phase 2
+          UserAccount,
+          Role,
+          Permission,
+          UserRoleScope,
+          WalletBinding,
         ],
         synchronize: process.env.APP_ENV !== 'production',  // auto-migrate in dev only
         logging:     process.env.APP_ENV === 'development',
@@ -59,10 +78,22 @@ import { EmployeeModule } from './modules/employee/employee.module.js';
     }),
 
     // ── Feature Modules ──────────────────────────────────────────────────────
+    // Phase 1
     OrganizationModule,
     OrganizationalUnitModule,
     PositionModule,
     EmployeeModule,
+
+    // Phase 2
+    AuthModule,
+  ],
+
+  providers: [
+    // ── Global JWT guard — all routes require auth unless decorated @Public() ─
+    {
+      provide:  APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

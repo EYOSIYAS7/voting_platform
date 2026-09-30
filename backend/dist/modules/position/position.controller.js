@@ -11,7 +11,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 import { Controller, Get, Post, Patch, Delete, Body, Param, ParseUUIDPipe, } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PositionService } from './position.service.js';
 import { CreatePositionDto, UpdatePositionDto } from './dto/position.dto.js';
 let PositionController = class PositionController {
@@ -77,6 +77,7 @@ __decorate([
 ], PositionController.prototype, "remove", null);
 PositionController = __decorate([
     ApiTags('positions'),
+    ApiBearerAuth(),
     Controller('positions'),
     __metadata("design:paramtypes", [PositionService])
 ], PositionController);

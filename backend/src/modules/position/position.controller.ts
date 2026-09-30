@@ -1,11 +1,12 @@
 import {
   Controller, Get, Post, Patch, Delete, Body, Param, ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PositionService } from './position.service.js';
 import { CreatePositionDto, UpdatePositionDto } from './dto/position.dto.js';
 
 @ApiTags('positions')
+@ApiBearerAuth()
 @Controller('positions')
 export class PositionController {
   constructor(private readonly service: PositionService) {}
