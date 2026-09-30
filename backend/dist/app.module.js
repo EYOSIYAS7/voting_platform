@@ -32,6 +32,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 import { ElectionModule } from './modules/election/election.module.js';
 import { CandidateModule } from './modules/candidate/candidate.module.js';
+import { VotingModule } from './modules/voting/voting.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -82,6 +83,7 @@ AppModule = __decorate([
             AuthModule,
             ElectionModule,
             CandidateModule,
+            VotingModule,
         ],
         providers: [
             {

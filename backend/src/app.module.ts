@@ -45,6 +45,9 @@ import { ElectionModule } from './modules/election/election.module.js';
 // Phase 4 Feature Modules
 import { CandidateModule } from './modules/candidate/candidate.module.js';
 
+// Phase 5 Feature Modules
+import { VotingModule } from './modules/voting/voting.module.js';
+
 @Module({
   imports: [
     // ── Config ──────────────────────────────────────────────────────────────
@@ -112,6 +115,9 @@ import { CandidateModule } from './modules/candidate/candidate.module.js';
 
     // Phase 4
     CandidateModule,
+
+    // Phase 5
+    VotingModule,
   ],
 
   providers: [
