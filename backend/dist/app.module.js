@@ -20,12 +20,16 @@ import { Role } from './modules/auth/entities/role.entity.js';
 import { Permission } from './modules/auth/entities/permission.entity.js';
 import { UserRoleScope } from './modules/auth/entities/user-role-scope.entity.js';
 import { WalletBinding } from './modules/auth/entities/wallet-binding.entity.js';
+import { Election } from './modules/election/entities/election.entity.js';
+import { EligibilityRule } from './modules/election/entities/eligibility-rule.entity.js';
+import { ElectionVoter } from './modules/election/entities/election-voter.entity.js';
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { OrganizationalUnitModule } from './modules/organizational-unit/organizational-unit.module.js';
 import { PositionModule } from './modules/position/position.module.js';
 import { EmployeeModule } from './modules/employee/employee.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
+import { ElectionModule } from './modules/election/election.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -60,6 +64,9 @@ AppModule = __decorate([
                         Permission,
                         UserRoleScope,
                         WalletBinding,
+                        Election,
+                        EligibilityRule,
+                        ElectionVoter,
                     ],
                     synchronize: process.env.APP_ENV !== 'production',
                     logging: process.env.APP_ENV === 'development',
@@ -70,6 +77,7 @@ AppModule = __decorate([
             PositionModule,
             EmployeeModule,
             AuthModule,
+            ElectionModule,
         ],
         providers: [
             {

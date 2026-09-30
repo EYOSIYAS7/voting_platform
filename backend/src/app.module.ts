@@ -21,6 +21,11 @@ import { Permission } from './modules/auth/entities/permission.entity.js';
 import { UserRoleScope } from './modules/auth/entities/user-role-scope.entity.js';
 import { WalletBinding } from './modules/auth/entities/wallet-binding.entity.js';
 
+// Phase 3 Entities
+import { Election } from './modules/election/entities/election.entity.js';
+import { EligibilityRule } from './modules/election/entities/eligibility-rule.entity.js';
+import { ElectionVoter } from './modules/election/entities/election-voter.entity.js';
+
 // Phase 1 Feature Modules
 import { OrganizationModule } from './modules/organization/organization.module.js';
 import { OrganizationalUnitModule } from './modules/organizational-unit/organizational-unit.module.js';
@@ -30,6 +35,9 @@ import { EmployeeModule } from './modules/employee/employee.module.js';
 // Phase 2 Feature Modules
 import { AuthModule } from './modules/auth/auth.module.js';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
+
+// Phase 3 Feature Modules
+import { ElectionModule } from './modules/election/election.module.js';
 
 @Module({
   imports: [
@@ -71,6 +79,10 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
           Permission,
           UserRoleScope,
           WalletBinding,
+          // Phase 3
+          Election,
+          EligibilityRule,
+          ElectionVoter,
         ],
         synchronize: process.env.APP_ENV !== 'production',  // auto-migrate in dev only
         logging:     process.env.APP_ENV === 'development',
@@ -86,6 +98,9 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard.js';
 
     // Phase 2
     AuthModule,
+
+    // Phase 3
+    ElectionModule,
   ],
 
   providers: [
