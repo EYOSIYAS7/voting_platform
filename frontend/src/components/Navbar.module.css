@@ -10,7 +10,7 @@
   padding: 1.15rem 0.9rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -29,6 +29,62 @@
   gap: 0.55rem;
 }
 
+.userProfile {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  padding: 0.75rem 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.userAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #2D57A8 0%, #6B4A78 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.userName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.userRole {
+  display: inline-block;
+  font-size: 0.675rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #3B64AF;
+  line-height: 1.3;
+}
+
+.userRoleAdmin {
+  color: #D92828;
+}
+
 .links {
   display: flex;
   flex-direction: column;
@@ -42,6 +98,9 @@
   color: var(--color-text-2);
   padding: 0.5rem 0.65rem;
   border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .link:hover {
@@ -56,6 +115,23 @@
   box-shadow: var(--shadow-sm);
 }
 
+.adminTag {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(217, 40, 40, 0.12);
+  color: #D92828;
+  font-weight: 700;
+}
+
+.sidebarFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
 .themeToggle {
   background: none;
   border: 1px solid var(--color-border);
@@ -66,11 +142,34 @@
   color: var(--color-text-2);
   font-family: inherit;
   text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .themeToggle:hover {
   color: var(--color-text);
   border-color: var(--color-border-2);
+}
+
+.logoutBtn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #D92828;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.logoutBtn:hover {
+  background: rgba(217, 40, 40, 0.08);
+  border-color: rgba(217, 40, 40, 0.3);
 }
 
 .topbar {
@@ -79,6 +178,7 @@
   height: var(--topbar-h);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   padding: 0 1.5rem;
   background: var(--color-surface);
@@ -98,16 +198,93 @@
   font-weight: 600;
   color: var(--color-text);
   font-family: inherit;
+  cursor: pointer;
+}
+
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .context {
   font-size: 0.8rem;
   color: var(--color-text-3);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.networkDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #137A4D;
+  display: inline-block;
+}
+
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bindingPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.bindingPillBound {
+  background: rgba(19, 122, 77, 0.1);
+  color: #137A4D;
+  border: 1px solid rgba(19, 122, 77, 0.25);
+}
+
+.bindingPillBound:hover {
+  background: rgba(19, 122, 77, 0.16);
+}
+
+.bindingPillUnbound {
+  background: rgba(181, 101, 29, 0.1);
+  color: #B5651D;
+  border: 1px solid rgba(181, 101, 29, 0.25);
+}
+
+.bindingPillUnbound:hover {
+  background: rgba(181, 101, 29, 0.16);
+}
+
+.signInBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #2D57A8 0%, #3B64AF 100%);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 4px rgba(45, 87, 168, 0.2);
+}
+
+.signInBtn:hover {
+  background: linear-gradient(135deg, #1E3E7E 0%, #2D57A8 100%);
+  transform: translateY(-1px);
 }
 
 .wallet {
-  margin-left: auto;
   flex-shrink: 0;
 }
 
@@ -119,7 +296,7 @@
   .sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    width: min(260px, 86vw);
+    width: min(280px, 86vw);
     height: 100vh;
     transform: translateX(-105%);
     transition: transform var(--t-base);
@@ -142,7 +319,7 @@
     position: fixed;
     inset: 0;
     border: 0;
-    background: rgba(24, 24, 24, 0.35);
+    background: rgba(0, 12, 44, 0.5);
     z-index: 115;
     padding: 0;
   }

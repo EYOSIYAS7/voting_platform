@@ -32,6 +32,17 @@ const lightRainbowTheme = lightTheme({
   overlayBlur:           'none',
 });
 
+import { useEffect } from 'react';
+import { useAuthStore } from '@/lib/store/useAuthStore';
+
+function AuthInitializer() {
+  const initAuth = useAuthStore((s) => s.initAuth);
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
+  return null;
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
 
@@ -39,9 +50,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={theme === 'light' ? lightRainbowTheme : darkRainbowTheme}>
+          <AuthInitializer />
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
 }
+
