@@ -1,10 +1,10 @@
 'use client';
 
-import { Candidate } from '@/lib/abi/votingPlatform';
+import { CandidateCardItem } from './CandidateCard';
 import styles from './ResultsChart.module.css';
 
 interface Props {
-  candidates: Candidate[];
+  candidates: CandidateCardItem[];
   totalVotes: bigint;
 }
 
@@ -34,7 +34,7 @@ export function ResultsChart({ candidates, totalVotes }: Props) {
             const isLeading = index === 0 && voteCount > 0;
 
             return (
-              <div key={candidate.id.toString()} className={styles.row}>
+              <div key={candidate.dbId} className={styles.row}>
                 <div className={styles.infoRow}>
                   <span className={`${styles.name} ${isLeading ? styles.leading : ''}`}>
                     {candidate.name}

@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Election } from '@/lib/abi/votingPlatform';
-import { useElectionStatus } from '@/lib/hooks/useContract';
+import { Election, ElectionStatus } from '@/lib/types/api';
 import { CountdownTimer } from './CountdownTimer';
 import styles from './ElectionCard.module.css';
 
@@ -11,33 +10,37 @@ interface Props {
   candidateCount?: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  Active:       { label: 'Voting open',     cls: 'status-active' },
-  Upcoming:     { label: 'Voting soon',     cls: 'status-upcoming' },
-  Registration: { label: 'Registration',    cls: 'status-registration' },
-  Pending:      { label: 'Not yet open',    cls: 'status-pending' },
-  Ended:        { label: 'Closed',          cls: 'status-ended' },
+const STATUS_CONFIG: Record<ElectionStatus, { label: string; cls: string }> = {
+  [ElectionStatus.DRAFT]:        { label: 'Draft',           cls: 'status-pending' },
+  [ElectionStatus.REGISTRATION]: { label: 'Registration',    cls: 'status-registration' },
+  [ElectionStatus.UPCOMING]:     { label: 'Voting soon',     cls: 'status-upcoming' },
+  [ElectionStatus.ACTIVE]:       { label: 'Voting open',     cls: 'status-active' },
+  [ElectionStatus.ENDED]:        { label: 'Closed',          cls: 'status-ended' },
+  [ElectionStatus.CANCELLED]:    { label: 'Cancelled',       cls: 'status-ended' },
 };
 
 export function ElectionCard({ election, candidateCount }: Props) {
-  const { data: status } = useElectionStatus(election.id);
-  const cfg = STATUS_CONFIG[status as string] ?? STATUS_CONFIG['Ended'];
+  const cfg = STATUS_CONFIG[election.status] ?? STATUS_CONFIG[ElectionStatus.ENDED];
 
-  const isActive = status === 'Active';
-  const isEnded  = status === 'Ended';
+  const isActive = election.status === ElectionStatus.ACTIVE;
+  const isEnded  = election.status === ElectionStatus.ENDED;
+
+  const voteStart = new Date(election.startDate).getTime() / 1000;
+  const voteEnd   = new Date(election.endDate).getTime()   / 1000;
+  const regEnd    = election.registrationDeadline
+    ? new Date(election.registrationDeadline).getTime() / 1000
+    : null;
 
   const countdownTarget =
-    status === 'Pending'      ? Number(election.registrationStart) :
-    status === 'Registration' ? Number(election.registrationEnd)   :
-    status === 'Upcoming'     ? Number(election.votingStart)       :
-    status === 'Active'       ? Number(election.votingEnd)         :
+    election.status === ElectionStatus.REGISTRATION && regEnd ? regEnd :
+    election.status === ElectionStatus.UPCOMING               ? voteStart :
+    election.status === ElectionStatus.ACTIVE                 ? voteEnd :
     null;
 
   const countdownLabel =
-    status === 'Pending'      ? 'Registration opens in' :
-    status === 'Registration' ? 'Registration closes in' :
-    status === 'Upcoming'     ? 'Voting starts in'      :
-    status === 'Active'       ? 'Voting ends in'        :
+    election.status === ElectionStatus.REGISTRATION ? 'Registration closes in' :
+    election.status === ElectionStatus.UPCOMING     ? 'Voting starts in'       :
+    election.status === ElectionStatus.ACTIVE       ? 'Voting ends in'         :
     null;
 
   const action = isEnded ? 'Results' : isActive ? 'Vote' : 'Details';
@@ -59,9 +62,6 @@ export function ElectionCard({ election, candidateCount }: Props) {
             <span>
               {candidateCount} candidate{candidateCount !== 1 ? 's' : ''}
             </span>
-          )}
-          {isEnded && (
-            <span>{Number(election.totalVotes).toLocaleString()} votes</span>
           )}
           {countdownTarget && countdownLabel && (
             <span>

@@ -47,11 +47,6 @@ export enum CandidateStatus {
   WITHDRAWN = "WITHDRAWN",
 }
 
-export enum WalletBindingStatus {
-  PENDING = "PENDING",
-  VERIFIED = "VERIFIED",
-  REVOKED = "REVOKED",
-}
 
 // ── Auth & Account Types ───────────────────────────────────────────────────────
 
@@ -103,39 +98,11 @@ export interface UserProfileResponse {
   };
   employee: EmployeeWithDetails;
   roles: UserRoleScope[];
-  walletBinding: {
-    address: string;
-    verifiedAt: string;
-  } | null;
 }
 
-// ── Wallet Binding ────────────────────────────────────────────────────────────
-
-export interface WalletChallengeRequest {
-  walletAddress: string;
-}
-
-export interface WalletChallengeResponse {
-  challenge: string;
-  message: string;
-}
-
-export interface WalletVerifyRequest {
-  walletAddress: string;
-  challenge: string;
-  signature: string;
-}
-
-export interface WalletBinding {
-  id: string;
-  employeeId: string;
-  walletAddress: string;
-  status: WalletBindingStatus;
-  verifiedAt: string | null;
-  createdAt: string;
-}
 
 // ── Organizational Entities ───────────────────────────────────────────────────
+
 
 export interface Organization {
   id: string;

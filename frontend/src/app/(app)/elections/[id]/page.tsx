@@ -1,79 +1,165 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useAccount } from 'wagmi';
+import { useAuthStore } from '@/lib/store/useAuthStore';
+import { electionsApi } from '@/lib/api/elections';
 import {
-  useElection,
-  useElectionStatus,
-  useResults,
-  useHasVoted,
-  useVoterChoice,
-  useVote,
-  useRegisterAsCandidate,
-  useContractAddress
-} from '@/lib/hooks/useContract';
-import { VOTING_PLATFORM_ABI, Election, Candidate } from '@/lib/abi/votingPlatform';
+  Election,
+  ElectionStatus,
+  Candidate,
+  CandidateStatus,
+  EligibilityCheckResponse,
+  VotingResultsResponse,
+  SelfNominateDto,
+} from '@/lib/types/api';
 import { CandidateCard } from '@/components/CandidateCard';
 import { ResultsChart } from '@/components/ResultsChart';
 import { CountdownTimer } from '@/components/CountdownTimer';
-import { CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import styles from './election-detail.module.css';
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  Active:       { label: 'Voting open',   cls: 'status-active' },
-  Upcoming:     { label: 'Voting soon',   cls: 'status-upcoming' },
-  Registration: { label: 'Registration',  cls: 'status-registration' },
-  Pending:      { label: 'Not yet open',  cls: 'status-pending' },
-  Ended:        { label: 'Closed',        cls: 'status-ended' },
+const STATUS_LABEL: Record<ElectionStatus, string> = {
+  [ElectionStatus.DRAFT]:        'Draft',
+  [ElectionStatus.REGISTRATION]: 'Registration open',
+  [ElectionStatus.UPCOMING]:     'Voting soon',
+  [ElectionStatus.ACTIVE]:       'Voting open',
+  [ElectionStatus.ENDED]:        'Closed',
+  [ElectionStatus.CANCELLED]:    'Cancelled',
+};
+
+const STATUS_CLS: Record<ElectionStatus, string> = {
+  [ElectionStatus.DRAFT]:        'status-pending',
+  [ElectionStatus.REGISTRATION]: 'status-registration',
+  [ElectionStatus.UPCOMING]:     'status-upcoming',
+  [ElectionStatus.ACTIVE]:       'status-active',
+  [ElectionStatus.ENDED]:        'status-ended',
+  [ElectionStatus.CANCELLED]:    'status-ended',
 };
 
 export default function ElectionDetailPage() {
   const params = useParams();
-  const electionId = BigInt(params.id as string);
+  const electionDbId = params.id as string;
+  const { isAuthenticated } = useAuthStore();
 
-  const { address, isConnected } = useAccount();
-  const contractAddress = useContractAddress();
+  // ── Data state ─────────────────────────────────────────────────────────────
+  const [election, setElection] = useState<Election | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [eligibility, setEligibility] = useState<EligibilityCheckResponse | null>(null);
+  const [results, setResults] = useState<VotingResultsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Queries
-  const { data: electionRaw, isLoading: isElectionLoading, refetch: refetchElection } = useElection(electionId);
-  const { data: statusRaw, refetch: refetchStatus } = useElectionStatus(electionId);
-  const { data: candidatesRaw, isLoading: isCandidatesLoading, refetch: refetchCandidates } = useResults(electionId);
-  
-  const { data: hasVotedRaw, refetch: refetchVoted } = useHasVoted(electionId, address || '');
-  const { data: choiceRaw, refetch: refetchChoice } = useVoterChoice(electionId, address || '');
+  // ── Nomination form state ───────────────────────────────────────────────────
+  const [statement, setStatement] = useState('');
+  const [slogan, setSlogan] = useState('');
+  const [isSubmittingNomination, setIsSubmittingNomination] = useState(false);
 
-  // Mutations
-  const { writeContract: vote, isPending: isVotingPending } = useVote();
-  const { writeContract: register, isPending: isRegisterPending } = useRegisterAsCandidate();
+  // ── Vote state ─────────────────────────────────────────────────────────────
+  const [isVoting, setIsVoting] = useState(false);
 
-  // Local state for candidate registration form
-  const [candName, setCandName] = useState('');
-  const [candDesc, setCandDesc] = useState('');
-  const [candImg, setCandImg] = useState('');
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error' | 'info';
+    txHash?: string;
+  }>({ show: false, message: '', type: 'info' });
 
-  // Local state for toast notification
-  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
-    show:    false,
-    message: '',
-    type:    'info',
-  });
-
-  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
-    setToast({ show: true, message, type });
+  const showToast = (message: string, type: 'success' | 'error' | 'info', txHash?: string) => {
+    setToast({ show: true, message, type, txHash });
   };
 
   useEffect(() => {
     if (toast.show) {
-      const timer = setTimeout(() => {
-        setToast((prev) => ({ ...prev, show: false }));
-      }, 5000);
+      const timer = setTimeout(() => setToast((t) => ({ ...t, show: false })), 7000);
       return () => clearTimeout(timer);
     }
   }, [toast.show]);
 
-  if (isElectionLoading || !electionRaw) {
+  // ── Load data ──────────────────────────────────────────────────────────────
+  const loadData = useCallback(async () => {
+    try {
+      const [electionData, candidatesData] = await Promise.all([
+        electionsApi.getElection(electionDbId),
+        electionsApi.getCandidates(electionDbId, CandidateStatus.APPROVED),
+      ]);
+      setElection(electionData);
+      setCandidates(candidatesData);
+
+      // Only fetch eligibility & results for authenticated users
+      if (isAuthenticated) {
+        const [eligData] = await Promise.all([
+          electionsApi.checkMyEligibility(electionDbId).catch(() => null),
+        ]);
+        setEligibility(eligData);
+
+        // Fetch live results if active or ended
+        if (
+          electionData.status === ElectionStatus.ACTIVE ||
+          electionData.status === ElectionStatus.ENDED
+        ) {
+          const resultsData = await electionsApi.getResults(electionDbId).catch(() => null);
+          setResults(resultsData);
+        }
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to load election', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [electionDbId, isAuthenticated]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleVote = async (candidateId: string) => {
+    if (!isAuthenticated) {
+      showToast('Please sign in to vote', 'error');
+      return;
+    }
+    setIsVoting(true);
+    try {
+      const res = await electionsApi.castVote(electionDbId, { candidateId });
+      showToast('Your vote has been recorded on the blockchain!', 'success', res.txHash);
+      // Refresh eligibility and results
+      await loadData();
+    } catch (err: any) {
+      const msg = err.message || 'Failed to cast vote';
+      showToast(msg, 'error');
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  const handleSelfNominate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      showToast('Please sign in to register', 'error');
+      return;
+    }
+    setIsSubmittingNomination(true);
+    try {
+      const dto: SelfNominateDto = {
+        statement: statement.trim() || undefined,
+        slogan: slogan.trim() || undefined,
+      };
+      await electionsApi.selfNominate(electionDbId, dto);
+      showToast('Candidacy submitted! Awaiting admin approval.', 'success');
+      setStatement('');
+      setSlogan('');
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to submit candidacy', 'error');
+    } finally {
+      setIsSubmittingNomination(false);
+    }
+  };
+
+  // ── Derived state ──────────────────────────────────────────────────────────
+  if (isLoading || !election) {
     return (
       <div className={styles.loaderContainer}>
         <div className="spinner" />
@@ -81,113 +167,56 @@ export default function ElectionDetailPage() {
     );
   }
 
-  const election = electionRaw as unknown as Election;
-  const candidates = (candidatesRaw || []) as unknown as Candidate[];
-  const status = (statusRaw || 'Ended') as string;
-  
-  const hasVoted = !!hasVotedRaw;
-  const voterChoiceId = choiceRaw ? BigInt(choiceRaw.toString()) : 0n;
+  const status = election.status;
+  const cfg = { label: STATUS_LABEL[status], cls: STATUS_CLS[status] };
 
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG['Ended'];
+  const hasVoted = eligibility?.hasVoted ?? false;
+  const isEligible = eligibility?.isEligible ?? false;
+  const canVote = isAuthenticated && isEligible && !hasVoted && status === ElectionStatus.ACTIVE;
+  const showLiveResults =
+    (status === ElectionStatus.ENDED) ||
+    (status === ElectionStatus.ACTIVE && hasVoted);
 
-  // Timestamps
-  const regStart  = Number(election.registrationStart);
-  const regEnd    = Number(election.registrationEnd);
-  const voteStart = Number(election.votingStart);
-  const voteEnd   = Number(election.votingEnd);
+  const voteStart = new Date(election.startDate).getTime() / 1000;
+  const voteEnd   = new Date(election.endDate).getTime()   / 1000;
+  const regEnd    = election.registrationDeadline
+    ? new Date(election.registrationDeadline).getTime() / 1000
+    : null;
 
-  const formatTime = (ts: number) => {
-    return new Date(ts * 1000).toLocaleString(undefined, {
-      month: 'short',
-      day:   'numeric',
-      hour:  '2-digit',
-      minute:'2-digit',
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
-  };
 
-  // Determine target for countdown
   const countdownTarget =
-    status === 'Pending'      ? regStart  :
-    status === 'Registration' ? regEnd    :
-    status === 'Upcoming'     ? voteStart :
-    status === 'Active'       ? voteEnd   :
+    status === ElectionStatus.REGISTRATION && regEnd ? regEnd :
+    status === ElectionStatus.UPCOMING             ? voteStart :
+    status === ElectionStatus.ACTIVE               ? voteEnd :
     null;
 
   const countdownLabel =
-    status === 'Pending'      ? 'Registration opens in' :
-    status === 'Registration' ? 'Registration closes in' :
-    status === 'Upcoming'     ? 'Voting starts in'      :
-    status === 'Active'       ? 'Voting ends in'        :
+    status === ElectionStatus.REGISTRATION ? 'Registration closes in' :
+    status === ElectionStatus.UPCOMING     ? 'Voting starts in' :
+    status === ElectionStatus.ACTIVE       ? 'Voting ends in' :
     null;
 
-  // Handlers
-  const handleVote = (candidateId: bigint) => {
-    if (!isConnected) {
-      showToast('Please connect your wallet to vote', 'error');
-      return;
-    }
+  // Map API Candidate to card-compatible shape
+  const mappedCandidates = candidates.map((c) => ({
+    id:          BigInt(c.onChainCandidateIndex ?? 0),
+    electionId:  BigInt(0),
+    name:        `${c.employee?.firstName ?? ''} ${c.employee?.lastName ?? ''}`.trim() || 'Unknown',
+    description: c.statement || '',
+    imageUrl:    c.photoUrl || '',
+    walletAddress: '' as `0x${string}`,
+    voteCount:   BigInt(
+      results?.candidates.find((r) => r.candidateId === c.id)?.voteCount ?? 0
+    ),
+    approved:    true,
+    exists:      true,
+    dbId:        c.id,
+  }));
 
-    vote(
-      {
-        address:      contractAddress,
-        abi:          VOTING_PLATFORM_ABI,
-        functionName: 'vote',
-        args:         [electionId, candidateId],
-      },
-      {
-        onSuccess: () => {
-          showToast('Vote cast successfully!', 'success');
-          // Refetch state
-          refetchElection();
-          refetchCandidates();
-          refetchVoted();
-          refetchChoice();
-        },
-        onError: (err: any) => {
-          console.error(err);
-          const msg = err.shortMessage || err.message || 'Failed to cast vote';
-          showToast(msg, 'error');
-        },
-      }
-    );
-  };
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isConnected) {
-      showToast('Please connect your wallet to register', 'error');
-      return;
-    }
-    if (!candName.trim()) {
-      showToast('Candidate name is required', 'error');
-      return;
-    }
-
-    register(
-      {
-        address:      contractAddress,
-        abi:          VOTING_PLATFORM_ABI,
-        functionName: 'registerAsCandidate',
-        args:         [electionId, candName, candDesc, candImg],
-      },
-      {
-        onSuccess: () => {
-          showToast('Candidacy submitted successfully! Awaiting admin approval.', 'success');
-          setCandName('');
-          setCandDesc('');
-          setCandImg('');
-          refetchCandidates();
-        },
-        onError: (err: any) => {
-          console.error(err);
-          const msg = err.shortMessage || err.message || 'Failed to register candidacy';
-          showToast(msg, 'error');
-        },
-      }
-    );
-  };
-
-  const showLiveResults = status === 'Ended' || (status === 'Active' && hasVoted);
+  const totalVotes = BigInt(results?.totalVotes ?? 0);
 
   return (
     <div className={`container ${styles.page}`}>
@@ -208,14 +237,11 @@ export default function ElectionDetailPage() {
               <span className={styles.asideLabel}>{countdownLabel}</span>
               <CountdownTimer
                 targetTimestamp={countdownTarget}
-                onExpire={() => {
-                  refetchStatus();
-                  refetchElection();
-                }}
+                onExpire={() => loadData()}
               />
             </>
           )}
-          {status === 'Ended' && (
+          {status === ElectionStatus.ENDED && (
             <p className={styles.asideLabel}>This election is closed.</p>
           )}
         </div>
@@ -226,29 +252,27 @@ export default function ElectionDetailPage() {
           <div className={`panel panel-pad ${styles.ballotPanel}`}>
             <h2 className={styles.sectionTitle}>Candidates</h2>
 
-            {isCandidatesLoading ? (
-              <div className="spinner" />
-            ) : candidates.length === 0 ? (
+            {candidates.length === 0 ? (
               <div className="empty-state">
                 <h3>No candidates on the ballot yet</h3>
                 <p>
-                  {status === 'Registration'
+                  {status === ElectionStatus.REGISTRATION
                     ? 'Registration is open. Approved candidates will appear here after review.'
                     : 'Candidates appear here after an administrator approves them.'}
                 </p>
               </div>
             ) : (
               <div className={styles.candidatesList}>
-                {candidates.map((candidate) => (
+                {mappedCandidates.map((candidate) => (
                   <CandidateCard
-                    key={candidate.id.toString()}
+                    key={candidate.dbId}
                     candidate={candidate}
-                    isVotingActive={status === 'Active'}
+                    isVotingActive={status === ElectionStatus.ACTIVE}
                     hasVoted={hasVoted}
-                    isVotedFor={voterChoiceId === candidate.id}
-                    onVote={handleVote}
-                    isLoadingVote={isVotingPending}
-                    totalVotes={election.totalVotes}
+                    isVotedFor={false}
+                    onVote={() => handleVote(candidate.dbId)}
+                    isLoadingVote={isVoting}
+                    totalVotes={totalVotes}
                     showResults={showLiveResults}
                   />
                 ))}
@@ -256,58 +280,46 @@ export default function ElectionDetailPage() {
             )}
           </div>
 
-          {status === 'Registration' && (
+          {/* Self-nomination form (Registration phase) */}
+          {status === ElectionStatus.REGISTRATION && isAuthenticated && (
             <div className={`panel panel-pad ${styles.regCard}`}>
               <div className={styles.regHeader}>
                 <h3 className={styles.regTitle}>Register as a candidate</h3>
                 <p className={styles.regDesc}>
-                  Submit your name. An administrator must approve you before you appear on the ballot.
+                  Submit your candidacy. An administrator must approve you before you appear on the ballot.
                 </p>
               </div>
 
-              <form onSubmit={handleRegister} className={styles.formGrid}>
+              <form onSubmit={handleSelfNominate} className={styles.formGrid}>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="cand-name">Full name</label>
+                  <label className="form-label" htmlFor="cand-statement">Statement</label>
+                  <textarea
+                    id="cand-statement"
+                    className="form-input"
+                    placeholder="Your background and what you stand for"
+                    value={statement}
+                    onChange={(e) => setStatement(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="cand-slogan">Slogan (optional)</label>
                   <input
-                    id="cand-name"
+                    id="cand-slogan"
                     type="text"
                     className="form-input"
-                    placeholder="Your name"
-                    value={candName}
-                    onChange={(e) => setCandName(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="cand-desc">Description</label>
-                  <textarea
-                    id="cand-desc"
-                    className="form-input"
-                    placeholder="Background and what you stand for"
-                    value={candDesc}
-                    onChange={(e) => setCandDesc(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="cand-img">Photo URL (optional)</label>
-                  <input
-                    id="cand-img"
-                    type="url"
-                    className="form-input"
-                    placeholder="https://"
-                    value={candImg}
-                    onChange={(e) => setCandImg(e.target.value)}
+                    placeholder="A short campaign slogan"
+                    value={slogan}
+                    onChange={(e) => setSlogan(e.target.value)}
                   />
                 </div>
 
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={isRegisterPending}
+                  disabled={isSubmittingNomination}
                 >
-                  {isRegisterPending ? 'Submitting…' : 'Submit registration'}
+                  {isSubmittingNomination ? 'Submitting…' : 'Submit registration'}
                 </button>
               </form>
             </div>
@@ -315,38 +327,48 @@ export default function ElectionDetailPage() {
         </div>
 
         <aside className={styles.rightCol}>
-          {showLiveResults && (
+          {showLiveResults && results && (
             <div className={`panel panel-pad ${styles.sideCard}`}>
-              <ResultsChart candidates={candidates} totalVotes={election.totalVotes} />
+              <ResultsChart candidates={mappedCandidates} totalVotes={totalVotes} />
             </div>
           )}
 
-          {!isConnected && (
+          {/* Voting / eligibility callout */}
+          {!isAuthenticated && (
             <p className={`panel panel-pad ${styles.note}`}>
-              Connect a wallet in the header to register or vote.
+              Sign in to vote or register as a candidate.
             </p>
           )}
 
-          {isConnected && status === 'Active' && !hasVoted && (
+          {isAuthenticated && status === ElectionStatus.ACTIVE && !isEligible && (
+            <p className={`panel panel-pad ${styles.note}`}>
+              You are not eligible to vote in this election.
+            </p>
+          )}
+
+          {canVote && (
             <p className={`panel panel-pad ${styles.note}`}>
               Choose one candidate. You can vote once. Results appear after your ballot is recorded.
             </p>
           )}
 
-          {isConnected && hasVoted && status === 'Active' && (
+          {isAuthenticated && hasVoted && status === ElectionStatus.ACTIVE && (
             <p className={`panel panel-pad ${styles.votedNotice}`}>
-              Your vote has been recorded.
+              <CheckCircle size={16} style={{ display: 'inline', marginRight: 6 }} />
+              Your vote has been recorded on-chain.
             </p>
           )}
 
           <dl className={`panel panel-pad ${styles.timeline}`}>
+            {election.registrationDeadline && (
+              <div>
+                <dt>Registration deadline</dt>
+                <dd>{formatTime(election.registrationDeadline)}</dd>
+              </div>
+            )}
             <div>
-              <dt>Registration</dt>
-              <dd>{formatTime(regStart)} – {formatTime(regEnd)}</dd>
-            </div>
-            <div>
-              <dt>Voting</dt>
-              <dd>{formatTime(voteStart)} – {formatTime(voteEnd)}</dd>
+              <dt>Voting window</dt>
+              <dd>{formatTime(election.startDate)} – {formatTime(election.endDate)}</dd>
             </div>
           </dl>
         </aside>
@@ -359,6 +381,15 @@ export default function ElectionDetailPage() {
             {toast.type === 'error' && <AlertTriangle size={18} style={{ color: 'var(--color-danger)' }} />}
             {toast.type === 'info' && <Info size={18} style={{ color: 'var(--color-accent)' }} />}
             <span>{toast.message}</span>
+            {toast.txHash && (
+              <a
+                href={`#tx-${toast.txHash}`}
+                title={`Transaction: ${toast.txHash}`}
+                style={{ marginLeft: 8, color: 'inherit', opacity: 0.8 }}
+              >
+                <ExternalLink size={14} />
+              </a>
+            )}
           </div>
         </div>
       )}

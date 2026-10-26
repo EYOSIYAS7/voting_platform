@@ -1,16 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { Candidate } from '@/lib/abi/votingPlatform';
 import { Check } from 'lucide-react';
 import styles from './CandidateCard.module.css';
 
+// Minimal shape the card needs — works with both ABI type and our mapped API type
+export interface CandidateCardItem {
+  id: bigint;
+  dbId: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  voteCount: bigint;
+  approved: boolean;
+  exists: boolean;
+}
+
 interface Props {
-  candidate: Candidate;
+  candidate: CandidateCardItem;
   isVotingActive: boolean;
   hasVoted: boolean;
   isVotedFor: boolean;
-  onVote?: (candidateId: bigint) => void;
+  onVote?: (candidateDbId: string) => void;
   isLoadingVote?: boolean;
   totalVotes?: bigint;
   showResults?: boolean;
@@ -26,21 +36,9 @@ export function CandidateCard({
   totalVotes = 0n,
   showResults = false,
 }: Props) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyAddress = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    navigator.clipboard.writeText(candidate.walletAddress);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const voteCount = Number(candidate.voteCount);
   const total = Number(totalVotes);
   const percentage = total > 0 ? (voteCount / total) * 100 : 0;
-
-  const displayAddress = `${candidate.walletAddress.substring(0, 6)}…${candidate.walletAddress.substring(candidate.walletAddress.length - 4)}`;
 
   return (
     <article
@@ -54,14 +52,6 @@ export function CandidateCard({
       <div className={styles.body}>
         <div className={styles.header}>
           <h3 className={styles.name}>{candidate.name}</h3>
-          <button
-            type="button"
-            onClick={handleCopyAddress}
-            className={styles.addressBtn}
-            title="Copy wallet address"
-          >
-            {copied ? 'Copied' : displayAddress}
-          </button>
         </div>
 
         {candidate.description && (
@@ -88,7 +78,7 @@ export function CandidateCard({
               <button
                 className="btn btn-primary btn-sm"
                 disabled={hasVoted || isLoadingVote || !candidate.approved}
-                onClick={() => onVote?.(candidate.id)}
+                onClick={() => onVote?.(candidate.dbId)}
               >
                 {isLoadingVote ? 'Submitting…' : hasVoted ? 'Vote recorded' : 'Select this candidate'}
               </button>

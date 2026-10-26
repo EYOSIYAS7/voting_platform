@@ -1,16 +1,28 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAllElectionIds } from '@/lib/hooks/useContract';
-import { ElectionCardLoader } from '@/components/ElectionCardLoader';
+import { electionsApi } from '@/lib/api/elections';
+import { Election, ElectionStatus } from '@/lib/types/api';
+import { ElectionCard } from '@/components/ElectionCard';
 import styles from './page.module.css';
 
 export default function Home() {
-  const { data: electionIdsRaw, isLoading, isError } = useAllElectionIds();
-  const electionIds = electionIdsRaw as readonly bigint[] | undefined;
+  const [elections, setElections] = useState<Election[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  const total = electionIds?.length ?? 0;
-  const featuredIds = electionIds ? [...electionIds].reverse().slice(0, 6) : [];
+  useEffect(() => {
+    electionsApi.getElections()
+      .then((data) => {
+        // Show the 6 most recent elections
+        setElections(data.slice(0, 6));
+      })
+      .catch(() => setIsError(true))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const activeCount = elections.filter((e) => e.status === ElectionStatus.ACTIVE).length;
 
   return (
     <div className="container">
@@ -31,12 +43,12 @@ export default function Home() {
 
       <div className="stat-row">
         <div className="stat">
-          <span>Elections on chain</span>
-          <strong>{isLoading ? '—' : total}</strong>
+          <span>Elections</span>
+          <strong>{isLoading ? '—' : elections.length}</strong>
         </div>
         <div className="stat">
-          <span>Shown here</span>
-          <strong>{isLoading ? '—' : featuredIds.length}</strong>
+          <span>Open now</span>
+          <strong>{isLoading ? '—' : activeCount}</strong>
         </div>
         <div className="stat">
           <span>Network</span>
@@ -52,7 +64,7 @@ export default function Home() {
         <section className={`panel ${styles.mainPanel}`}>
           <div className={styles.panelHead}>
             <h2>Current elections</h2>
-            {featuredIds.length > 0 && (
+            {elections.length > 0 && (
               <Link href="/elections" className="btn btn-ghost btn-sm">
                 View all
               </Link>
@@ -63,18 +75,18 @@ export default function Home() {
             <div className={styles.loaderContainer}>
               <div className="spinner" />
             </div>
-          ) : isError || featuredIds.length === 0 ? (
+          ) : isError || elections.length === 0 ? (
             <div className="empty-state">
               <h3>No elections yet</h3>
-              <p>Connect a wallet and return later, or create one as an administrator.</p>
+              <p>Sign in and return later, or create one as an administrator.</p>
               <Link href="/admin" className="btn btn-outline btn-sm">
                 Go to admin
               </Link>
             </div>
           ) : (
             <div className={styles.electionsGrid}>
-              {featuredIds.map((id) => (
-                <ElectionCardLoader key={id.toString()} electionId={id} />
+              {elections.map((election) => (
+                <ElectionCard key={election.id} election={election} />
               ))}
             </div>
           )}
