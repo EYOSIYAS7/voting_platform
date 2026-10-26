@@ -12,14 +12,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
-import { verifyMessage, getAddress } from 'viem';
-import { randomBytes } from 'crypto';
 
 import { UserAccount } from './entities/user-account.entity.js';
 import { Role, SystemRole } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
-import { WalletBinding, WalletBindingStatus } from './entities/wallet-binding.entity.js';
 import { Employee } from '../employee/employee.entity.js';
 import { JwtPayload, AuthenticatedUser } from '../../common/types/jwt-payload.types.js';
 import {
@@ -32,7 +29,6 @@ import {
 const BCRYPT_ROUNDS    = 12;
 const MAX_FAILED_LOGINS = 5;
 const LOCKOUT_MINUTES   = 15;
-const CHALLENGE_TTL_MS  = 5 * 60 * 1000; // 5 minutes
 
 @Injectable()
 export class AuthService {
@@ -48,9 +44,6 @@ export class AuthService {
 
     @InjectRepository(UserRoleScope)
     private readonly scopeRepo: Repository<UserRoleScope>,
-
-    @InjectRepository(WalletBinding)
-    private readonly walletRepo: Repository<WalletBinding>,
 
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
@@ -232,163 +225,20 @@ export class AuthService {
     return this.roleRepo.find();
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // Wallet Binding (SIWE)
-  // ══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Step 1: Issue a challenge nonce for the wallet address.
-   * The frontend will present this to MetaMask/RainbowKit for signing.
-   */
-  async requestWalletChallenge(
-    employeeId: string,
-    walletAddress: string,
-  ): Promise<{ challenge: string; message: string }> {
-    // Normalise to EIP-55 checksummed address
-    let checksummed: string;
-    try {
-      checksummed = getAddress(walletAddress);
-    } catch {
-      throw new BadRequestException('Invalid Ethereum address');
-    }
-
-    // Check address isn't already verified by another employee
-    const conflictBinding = await this.walletRepo.findOne({
-      where: { walletAddress: checksummed, status: WalletBindingStatus.VERIFIED },
-    });
-    if (conflictBinding && conflictBinding.employeeId !== employeeId) {
-      throw new ConflictException('This wallet address is already bound to another employee');
-    }
-
-    // Expire any old PENDING bindings for this employee+address
-    await this.walletRepo
-      .createQueryBuilder()
-      .update(WalletBinding)
-      .set({ status: WalletBindingStatus.REVOKED })
-      .where('employeeId = :employeeId AND status = :status', {
-        employeeId,
-        status: WalletBindingStatus.PENDING,
-      })
-      .execute();
-
-    const challenge = `Sign this message to link your wallet to your organizational account.\n\nNonce: ${randomBytes(16).toString('hex')}\nTimestamp: ${new Date().toISOString()}`;
-
-    const binding = this.walletRepo.create({
-      employeeId,
-      walletAddress: checksummed,
-      status:             WalletBindingStatus.PENDING,
-      challenge,
-      challengeIssuedAt:  new Date(),
-    });
-    await this.walletRepo.save(binding);
-
-    return { challenge, message: 'Sign this message in your wallet to verify ownership' };
-  }
-
-  /**
-   * Step 2: Verify the signed challenge. On success, mark binding as VERIFIED.
-   */
-  async verifyWalletSignature(
-    employeeId: string,
-    walletAddress: string,
-    challenge: string,
-    signature: string,
-  ): Promise<WalletBinding> {
-    let checksummed: string;
-    try {
-      checksummed = getAddress(walletAddress);
-    } catch {
-      throw new BadRequestException('Invalid Ethereum address');
-    }
-
-    const binding = await this.walletRepo.findOne({
-      where: {
-        employeeId,
-        walletAddress: checksummed,
-        status:        WalletBindingStatus.PENDING,
-      },
-    });
-    if (!binding) throw new NotFoundException('No pending wallet binding found');
-
-    // Check challenge TTL
-    if (
-      !binding.challengeIssuedAt ||
-      Date.now() - binding.challengeIssuedAt.getTime() > CHALLENGE_TTL_MS
-    ) {
-      throw new BadRequestException('Challenge has expired. Please request a new one.');
-    }
-
-    // Verify the stored challenge matches what was sent
-    if (binding.challenge !== challenge) {
-      throw new BadRequestException('Challenge mismatch');
-    }
-
-    // Verify ECDSA signature using viem
-    let isValid = false;
-    try {
-      isValid = await verifyMessage({
-        address:   checksummed as `0x${string}`,
-        message:   challenge,
-        signature: signature as `0x${string}`,
-      });
-    } catch {
-      throw new BadRequestException('Signature verification failed');
-    }
-
-    if (!isValid) throw new UnauthorizedException('Signature does not match wallet address');
-
-    // Revoke any previously verified binding for this employee (replace it)
-    await this.walletRepo
-      .createQueryBuilder()
-      .update(WalletBinding)
-      .set({ status: WalletBindingStatus.REVOKED })
-      .where('employeeId = :employeeId AND status = :status AND id != :id', {
-        employeeId,
-        status: WalletBindingStatus.VERIFIED,
-        id:     binding.id,
-      })
-      .execute();
-
-    binding.status     = WalletBindingStatus.VERIFIED;
-    binding.verifiedAt = new Date();
-    binding.challenge  = null;
-    const saved = await this.walletRepo.save(binding);
-
-    this.eventEmitter.emit('wallet.binding.verified', {
-      employeeId,
-      walletAddress: checksummed,
-    });
-
-    return saved;
-  }
-
-  async getActiveWalletBinding(employeeId: string): Promise<WalletBinding | null> {
-    return this.walletRepo.findOne({
-      where: { employeeId, status: WalletBindingStatus.VERIFIED },
-    });
-  }
-
-  async revokeWalletBinding(bindingId: string, revokedBy: string): Promise<void> {
-    const binding = await this.walletRepo.findOne({ where: { id: bindingId } });
-    if (!binding) throw new NotFoundException('Wallet binding not found');
-    binding.status = WalletBindingStatus.REVOKED;
-    await this.walletRepo.save(binding);
-    this.eventEmitter.emit('wallet.binding.revoked', { bindingId, revokedBy });
-  }
 
   // ══════════════════════════════════════════════════════════════════════════
   // Profile / Me
+
   // ══════════════════════════════════════════════════════════════════════════
 
   async getProfile(user: AuthenticatedUser): Promise<object> {
-    const [account, employee, scopes, walletBinding] = await Promise.all([
+    const [account, employee, scopes] = await Promise.all([
       this.accountRepo.findOne({ where: { id: user.userId } }),
       this.employeeRepo.findOne({
         where: { id: user.employeeId },
         relations: ['organizationalUnit', 'position'],
       }),
       this.scopeRepo.find({ where: { userId: user.userId }, relations: ['role'] }),
-      this.getActiveWalletBinding(user.employeeId),
     ]);
 
     return {
@@ -399,10 +249,7 @@ export class AuthService {
         isActive:           account?.isActive,
       },
       employee,
-      roles:         scopes.map((s) => ({ role: s.role.name, orgUnitId: s.orgUnitId })),
-      walletBinding: walletBinding
-        ? { address: walletBinding.walletAddress, verifiedAt: walletBinding.verifiedAt }
-        : null,
+      roles: scopes.map((s) => ({ role: s.role.name, orgUnitId: s.orgUnitId })),
     };
   }
 }

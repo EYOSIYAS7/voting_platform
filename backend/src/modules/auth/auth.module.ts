@@ -9,7 +9,6 @@ import { UserAccount } from './entities/user-account.entity.js';
 import { Role } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
-import { WalletBinding } from './entities/wallet-binding.entity.js';
 import { Employee } from '../employee/employee.entity.js';
 
 // Strategies & Guards
@@ -44,7 +43,6 @@ import { AuthController } from './auth.controller.js';
       Role,
       Permission,
       UserRoleScope,
-      WalletBinding,
       Employee,         // needed to look up email & employeeId
     ]),
   ],

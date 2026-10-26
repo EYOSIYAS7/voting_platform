@@ -33,7 +33,6 @@ import {
   AssignRoleDto,
   TokenResponseDto,
 } from './dto/auth.dto.js';
-import { WalletChallengeDto, WalletVerifyDto } from './dto/wallet.dto.js';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -73,53 +72,6 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(userId, dto);
-  }
-
-  // ── Wallet Binding (SIWE) ─────────────────────────────────────────────────
-
-  @ApiBearerAuth()
-  @Post('wallet/challenge')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Request a SIWE challenge nonce to sign with your wallet' })
-  requestChallenge(
-    @CurrentUser('employeeId') employeeId: string,
-    @Body() dto: WalletChallengeDto,
-  ) {
-    return this.authService.requestWalletChallenge(employeeId, dto.walletAddress);
-  }
-
-  @ApiBearerAuth()
-  @Post('wallet/verify')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Submit signed challenge to verify wallet ownership and bind it' })
-  verifyWallet(
-    @CurrentUser('employeeId') employeeId: string,
-    @Body() dto: WalletVerifyDto,
-  ) {
-    return this.authService.verifyWalletSignature(
-      employeeId,
-      dto.walletAddress,
-      dto.challenge,
-      dto.signature,
-    );
-  }
-
-  @ApiBearerAuth()
-  @Get('wallet')
-  @ApiOperation({ summary: 'Get your active verified wallet binding' })
-  getWallet(@CurrentUser('employeeId') employeeId: string) {
-    return this.authService.getActiveWalletBinding(employeeId);
-  }
-
-  @ApiBearerAuth()
-  @Delete('wallet/:bindingId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Revoke a wallet binding' })
-  revokeWallet(
-    @Param('bindingId', ParseUUIDPipe) bindingId: string,
-    @CurrentUser('userId') userId: string,
-  ) {
-    return this.authService.revokeWalletBinding(bindingId, userId);
   }
 
   // ── Admin-only Role Management ────────────────────────────────────────────
