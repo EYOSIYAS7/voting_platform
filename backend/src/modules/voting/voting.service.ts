@@ -9,12 +9,17 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import type { Address } from 'viem';
+import { keccak256, toBytes } from 'viem';
 
-import { Election, ElectionStatus } from '../election/entities/election.entity.js';
+import {
+  Election,
+  ElectionStatus,
+} from '../election/entities/election.entity.js';
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
-import { Candidate, CandidateStatus } from '../candidate/entities/candidate.entity.js';
-import { WalletBinding, WalletBindingStatus } from '../auth/entities/wallet-binding.entity.js';
+import {
+  Candidate,
+  CandidateStatus,
+} from '../candidate/entities/candidate.entity.js';
 
 import { BlockchainService } from './blockchain.service.js';
 import { CastVoteDto, PublishElectionDto } from './dto/voting.dto.js';
@@ -32,9 +37,6 @@ export class VotingService {
 
     @InjectRepository(Candidate)
     private readonly candidateRepo: Repository<Candidate>,
-
-    @InjectRepository(WalletBinding)
-    private readonly walletRepo: Repository<WalletBinding>,
 
     private readonly blockchain: BlockchainService,
     private readonly dataSource: DataSource,
@@ -59,27 +61,42 @@ export class VotingService {
       );
     }
 
-    if (![ElectionStatus.DRAFT, ElectionStatus.REGISTRATION, ElectionStatus.UPCOMING].includes(election.status)) {
+    if (
+      ![
+        ElectionStatus.DRAFT,
+        ElectionStatus.REGISTRATION,
+        ElectionStatus.UPCOMING,
+      ].includes(election.status)
+    ) {
       throw new BadRequestException(
         `Election must be in DRAFT, REGISTRATION, or UPCOMING status to publish. Current: ${election.status}`,
       );
     }
 
     const registrationStart = election.registrationDeadline
-      ? BigInt(Math.floor(new Date(election.registrationDeadline).getTime() / 1000) - 86400)
+      ? BigInt(
+          Math.floor(new Date(election.registrationDeadline).getTime() / 1000) -
+            86400,
+        )
       : BigInt(Math.floor(Date.now() / 1000));
 
     const registrationEnd = election.registrationDeadline
-      ? BigInt(Math.floor(new Date(election.registrationDeadline).getTime() / 1000))
+      ? BigInt(
+          Math.floor(new Date(election.registrationDeadline).getTime() / 1000),
+        )
       : BigInt(Math.floor(new Date(election.startDate).getTime() / 1000) - 60);
 
-    const votingStart = BigInt(Math.floor(new Date(election.startDate).getTime() / 1000));
-    const votingEnd   = BigInt(Math.floor(new Date(election.endDate).getTime() / 1000));
+    const votingStart = BigInt(
+      Math.floor(new Date(election.startDate).getTime() / 1000),
+    );
+    const votingEnd = BigInt(
+      Math.floor(new Date(election.endDate).getTime() / 1000),
+    );
 
     const onChainId = await this.blockchain.createElectionOnChain({
-      title:             election.title,
-      description:       election.description ?? '',
-      imageUrl:          dto.imageUrl ?? '',
+      title: election.title,
+      description: election.description ?? '',
+      imageUrl: dto.imageUrl ?? '',
       registrationStart,
       registrationEnd,
       votingStart,
@@ -89,7 +106,9 @@ export class VotingService {
     election.onChainElectionId = onChainId.toString();
     await this.electionRepo.save(election);
 
-    this.logger.log(`Election ${electionId} published on-chain as ID ${onChainId}`);
+    this.logger.log(
+      `Election ${electionId} published on-chain as ID ${onChainId}`,
+    );
     return { election, onChainElectionId: onChainId.toString() };
   }
 
@@ -116,7 +135,8 @@ export class VotingService {
       where: { id: candidateId, electionId },
       relations: ['employee'],
     });
-    if (!candidate) throw new NotFoundException(`Candidate ${candidateId} not found`);
+    if (!candidate)
+      throw new NotFoundException(`Candidate ${candidateId} not found`);
 
     if (candidate.status !== CandidateStatus.APPROVED) {
       throw new BadRequestException(
@@ -130,28 +150,24 @@ export class VotingService {
       );
     }
 
-    // Get the candidate's bound wallet
-    const binding = await this.walletRepo.findOne({
-      where: { employeeId: candidate.employeeId, status: WalletBindingStatus.VERIFIED },
-    });
-
-    // Use server wallet as fallback if candidate has no wallet bound yet
-    const walletAddress: Address = binding
-      ? (binding.walletAddress as Address)
-      : await this.blockchain.getServerWalletAddress();
+    // Always use the server relay wallet as the on-chain address for candidates.
+    // No user wallet binding needed — architecture decision: server-relay only.
+    const walletAddress = await this.blockchain.getServerWalletAddress();
 
     const onChainId = await this.blockchain.addCandidateOnChain({
       onChainElectionId: BigInt(election.onChainElectionId),
-      name:              `${candidate.employee.firstName} ${candidate.employee.lastName}`,
-      description:       candidate.statement ?? '',
-      imageUrl:          candidate.photoUrl ?? '',
+      name: `${candidate.employee.firstName} ${candidate.employee.lastName}`,
+      description: candidate.statement ?? '',
+      imageUrl: candidate.photoUrl ?? '',
       walletAddress,
     });
 
     candidate.onChainCandidateIndex = Number(onChainId);
     await this.candidateRepo.save(candidate);
 
-    this.logger.log(`Candidate ${candidateId} published on-chain as index ${onChainId}`);
+    this.logger.log(
+      `Candidate ${candidateId} published on-chain as index ${onChainId}`,
+    );
     return { candidate, onChainCandidateIndex: Number(onChainId) };
   }
 
@@ -199,10 +215,13 @@ export class VotingService {
     const candidate = await this.candidateRepo.findOne({
       where: { id: dto.candidateId, electionId },
     });
-    if (!candidate) throw new NotFoundException(`Candidate ${dto.candidateId} not found`);
+    if (!candidate)
+      throw new NotFoundException(`Candidate ${dto.candidateId} not found`);
 
     if (candidate.status !== CandidateStatus.APPROVED) {
-      throw new BadRequestException('You can only vote for an APPROVED candidate.');
+      throw new BadRequestException(
+        'You can only vote for an APPROVED candidate.',
+      );
     }
 
     if (candidate.onChainCandidateIndex === null) {
@@ -224,31 +243,20 @@ export class VotingService {
 
     // ── 4. Double-vote prevention (DB) ──────────────────────────────────────
     if (voterRow.hasVoted) {
-      throw new ConflictException('You have already cast your vote in this election.');
-    }
-
-    // ── 4b. Double-vote prevention (on-chain, as safety net) ────────────────
-    const serverWallet = await this.blockchain.getServerWalletAddress();
-    const alreadyVotedOnChain = await this.blockchain.hasVotedOnChain(
-      BigInt(election.onChainElectionId),
-      serverWallet,
-    );
-    // Note: the server wallet votes for ALL employees, so this check is a
-    // belt-and-suspenders guard — the DB hasVoted flag is the primary source.
-    // If the contract returns true AND DB says false, something is desynchronised.
-    if (alreadyVotedOnChain) {
-      this.logger.error(
-        `On-chain hasVoted=true but DB hasVoted=false for election ${electionId}. Possible desync.`,
-      );
-      throw new InternalServerErrorException(
-        'Vote state is inconsistent. Please contact an administrator.',
+      throw new ConflictException(
+        'You have already cast your vote in this election.',
       );
     }
 
     // ── 5. Submit on-chain ──────────────────────────────────────────────────
+    // Derive a deterministic bytes32 voter reference from the employee UUID.
+    // Stored on-chain for tamper-evident audit without exposing PII.
+    const voterRef = keccak256(toBytes(employeeId)) as `0x${string}`;
+
     const txHash = await this.blockchain.castVoteOnChain({
-      onChainElectionId:  BigInt(election.onChainElectionId),
+      onChainElectionId: BigInt(election.onChainElectionId),
       onChainCandidateId: BigInt(candidate.onChainCandidateIndex),
+      voterRef,
     });
 
     // ── 6. Record in DB ─────────────────────────────────────────────────────
@@ -274,12 +282,14 @@ export class VotingService {
     const election = await this.requireElection(electionId);
 
     if (!election.onChainElectionId) {
-      throw new BadRequestException('Election has not been published on-chain yet.');
+      throw new BadRequestException(
+        'Election has not been published on-chain yet.',
+      );
     }
 
-    const onChainResults = await this.blockchain.getResultsOnChain(
+    const onChainResults = (await this.blockchain.getResultsOnChain(
       BigInt(election.onChainElectionId),
-    ) as any[];
+    )) as any[];
 
     // Enrich with DB candidate data (name, statement, photoUrl already in DB)
     const dbCandidates = await this.candidateRepo.find({
@@ -298,28 +308,29 @@ export class VotingService {
 
     return {
       electionId,
-      onChainElectionId:  election.onChainElectionId,
-      title:              election.title,
-      status:             election.status,
-      totalVotes:         Number(totalVotes),
+      onChainElectionId: election.onChainElectionId,
+      title: election.title,
+      status: election.status,
+      totalVotes: Number(totalVotes),
       candidates: onChainResults.map((c: any) => {
         const dbCandidate = candidateMap.get(Number(c.id));
         return {
           onChainCandidateIndex: Number(c.id),
-          candidateId:           dbCandidate?.id ?? null,
-          name:                  c.name,
-          voteCount:             Number(c.voteCount),
-          percentage:            totalVotes > 0n
-            ? ((Number(c.voteCount) / Number(totalVotes)) * 100).toFixed(2)
-            : '0.00',
-          statement:  dbCandidate?.statement ?? null,
-          photoUrl:   dbCandidate?.photoUrl ?? null,
+          candidateId: dbCandidate?.id ?? null,
+          name: c.name,
+          voteCount: Number(c.voteCount),
+          percentage:
+            totalVotes > 0n
+              ? ((Number(c.voteCount) / Number(totalVotes)) * 100).toFixed(2)
+              : '0.00',
+          statement: dbCandidate?.statement ?? null,
+          photoUrl: dbCandidate?.photoUrl ?? null,
           employee: dbCandidate?.employee
             ? {
-                id:        dbCandidate.employee.id,
+                id: dbCandidate.employee.id,
                 firstName: dbCandidate.employee.firstName,
-                lastName:  dbCandidate.employee.lastName,
-                email:     dbCandidate.employee.email,
+                lastName: dbCandidate.employee.lastName,
+                email: dbCandidate.employee.email,
               }
             : null,
         };
@@ -345,9 +356,9 @@ export class VotingService {
     }
 
     return {
-      voted:      voterRow.hasVoted,
-      txHash:     voterRow.txHash,
-      votedAt:    voterRow.votedAt,
+      voted: voterRow.hasVoted,
+      txHash: voterRow.txHash,
+      votedAt: voterRow.votedAt,
       candidateId: null, // We intentionally do NOT expose which candidate they voted for
     };
   }
@@ -355,8 +366,11 @@ export class VotingService {
   // ─────────────────── Private helpers ───────────────────────────────────────
 
   private async requireElection(electionId: string): Promise<Election> {
-    const election = await this.electionRepo.findOne({ where: { id: electionId } });
-    if (!election) throw new NotFoundException(`Election ${electionId} not found`);
+    const election = await this.electionRepo.findOne({
+      where: { id: electionId },
+    });
+    if (!election)
+      throw new NotFoundException(`Election ${electionId} not found`);
     return election;
   }
 }

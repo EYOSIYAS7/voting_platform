@@ -3,8 +3,11 @@
  * Communicates with the NestJS backend on http://localhost:3001
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const rawBaseUrl =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+const cleanRaw = rawBaseUrl.replace(/\/+$/, '');
+const API_BASE_URL = cleanRaw.endsWith('/api') ? cleanRaw : `${cleanRaw}/api`;
 
 export class ApiClientError extends Error {
   statusCode: number;
@@ -95,7 +98,12 @@ class ApiClient {
         data = await response.json();
       } else {
         const text = await response.text();
-        data = text ? { message: text } : null;
+        let parsedMessage = text;
+        if (text && (text.includes('<html') || text.includes('<!DOCTYPE'))) {
+          const preMatch = text.match(/<pre>(.*?)<\/pre>/i);
+          parsedMessage = preMatch ? preMatch[1] : `HTTP ${response.status}: ${response.statusText}`;
+        }
+        data = text ? { message: parsedMessage } : null;
       }
 
       if (!response.ok) {

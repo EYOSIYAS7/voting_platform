@@ -4,10 +4,16 @@ pragma solidity ^0.8.24;
 /**
  * @title VotingPlatform
  * @notice Multi-election blockchain voting platform for Hyperledger Besu.
- *         - Super-admin can create elections and manage candidates
- *         - Candidates can self-register (pending admin approval)
- *         - One vote per address per election (enforced on-chain)
- *         - Elections automatically close when block.timestamp exceeds votingEnd
+ *
+ * Architecture (server-relay model):
+ *  - A single trusted server relay wallet (the superAdmin) submits all
+ *    write transactions on behalf of voters.
+ *  - One-person-one-vote is enforced by the backend database; the contract
+ *    does NOT track per-address vote history.
+ *  - vote() is restricted to admin-only so only the server relay wallet
+ *    can submit votes — random wallets cannot inject votes.
+ *  - An opaque voterRef (keccak256 of the off-chain employee ID) is emitted
+ *    in VoteCast for a tamper-evident audit log without exposing PII.
  */
 contract VotingPlatform {
 
@@ -58,11 +64,9 @@ contract VotingPlatform {
     // electionId => list of candidate IDs
     mapping(uint256 => uint256[]) private _candidateIds;
 
-    // electionId => voter address => has voted
-    mapping(uint256 => mapping(address => bool)) public hasVoted;
-
-    // electionId => voter address => candidateId they voted for
-    mapping(uint256 => mapping(address => uint256)) public voterChoice;
+    // NOTE: Per-address vote-tracking mappings (hasVoted / voterChoice) have been
+    // intentionally removed. Duplicate-vote prevention is enforced by the backend
+    // database (election_voters.hasVoted). The contract trusts the server relay.
 
     // ─────────────────────────────────────────────────────────────────────────
     // Events
@@ -89,10 +93,19 @@ contract VotingPlatform {
     event CandidateApproved(uint256 indexed electionId, uint256 indexed candidateId);
     event CandidateRejected(uint256 indexed electionId, uint256 indexed candidateId);
 
+    /**
+     * @notice Emitted when a vote is relayed on-chain.
+     * @param electionId  On-chain election ID.
+     * @param candidateId On-chain candidate ID.
+     * @param voterRef    keccak256(abi.encodePacked(employeeId)) — an opaque
+     *                    reference to the off-chain voter for audit purposes.
+     *                    Does NOT expose PII; mapping back to an employee
+     *                    requires the original employee ID from the backend.
+     */
     event VoteCast(
         uint256 indexed electionId,
         uint256 indexed candidateId,
-        address indexed voter
+        bytes32 indexed voterRef
     );
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -329,28 +342,43 @@ contract VotingPlatform {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * @notice Cast a vote for a candidate in an election.
-     *         - Election must be in the active voting window
-     *         - Voter can only vote once per election (enforced by address)
-     *         - Candidate must be approved
+     * @notice Relay a vote on-chain for a voter.
+     *
+     * This function MUST only be called by the trusted server relay wallet
+     * (an admin). The backend database is the authoritative source for:
+     *   - Voter eligibility  (election_voters.isEligible)
+     *   - Duplicate-vote prevention  (election_voters.hasVoted)
+     *
+     * The contract enforces:
+     *   - The election is within its active voting window.
+     *   - The target candidate is approved.
+     *   - The caller is an admin (i.e. the server relay wallet).
+     *
+     * @param electionId  On-chain election ID.
+     * @param candidateId On-chain candidate ID.
+     * @param voterRef    keccak256(abi.encodePacked(employeeId)) — an opaque
+     *                    tamper-evident audit reference to the off-chain voter.
      */
-    function vote(uint256 electionId, uint256 candidateId)
+    function vote(
+        uint256 electionId,
+        uint256 candidateId,
+        bytes32 voterRef
+    )
         external
+        onlyAdmin
         electionExists(electionId)
         candidateExists(electionId, candidateId)
     {
         Election storage e = elections[electionId];
         require(block.timestamp >= e.votingStart, "VotingPlatform: voting has not started yet");
         require(block.timestamp <= e.votingEnd,   "VotingPlatform: voting has ended");
-        require(!hasVoted[electionId][msg.sender], "VotingPlatform: already voted in this election");
         require(candidates[electionId][candidateId].approved, "VotingPlatform: candidate not approved");
+        require(voterRef != bytes32(0), "VotingPlatform: voterRef must not be zero");
 
-        hasVoted[electionId][msg.sender]    = true;
-        voterChoice[electionId][msg.sender] = candidateId;
         candidates[electionId][candidateId].voteCount++;
         e.totalVotes++;
 
-        emit VoteCast(electionId, candidateId, msg.sender);
+        emit VoteCast(electionId, candidateId, voterRef);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
