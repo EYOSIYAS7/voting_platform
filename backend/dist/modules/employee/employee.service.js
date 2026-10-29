@@ -35,18 +35,26 @@ let EmployeeService = class EmployeeService {
         return this.repo.save(employee);
     }
     async findAll(filters) {
-        const where = {};
-        if (filters?.unitId)
-            Object.assign(where, { organizationalUnitId: filters.unitId });
-        if (filters?.status)
-            Object.assign(where, { status: filters.status });
-        if (filters?.positionId)
-            Object.assign(where, { positionId: filters.positionId });
-        return this.repo.find({
-            where,
-            relations: ['organizationalUnit', 'position'],
-            order: { lastName: 'ASC', firstName: 'ASC' },
-        });
+        const qb = this.repo
+            .createQueryBuilder('employee')
+            .leftJoinAndSelect('employee.organizationalUnit', 'organizationalUnit')
+            .leftJoinAndSelect('employee.position', 'position');
+        if (filters?.unitId) {
+            qb.andWhere('employee.organizationalUnitId = :unitId', { unitId: filters.unitId });
+        }
+        if (filters?.status) {
+            qb.andWhere('employee.status = :status', { status: filters.status });
+        }
+        if (filters?.positionId) {
+            qb.andWhere('employee.positionId = :positionId', { positionId: filters.positionId });
+        }
+        if (filters?.search) {
+            qb.andWhere('(LOWER(employee.firstName) LIKE :search OR LOWER(employee.lastName) LIKE :search OR LOWER(employee.email) LIKE :search OR LOWER(employee.employeeId) LIKE :search)', { search: `%${filters.search.toLowerCase()}%` });
+        }
+        return qb
+            .orderBy('employee.lastName', 'ASC')
+            .addOrderBy('employee.firstName', 'ASC')
+            .getMany();
     }
     async findByUnitIds(unitIds, status) {
         const qb = this.repo

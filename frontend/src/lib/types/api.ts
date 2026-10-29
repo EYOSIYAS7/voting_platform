@@ -18,11 +18,14 @@ export enum EmployeeStatus {
 }
 
 export enum UnitType {
+  ORGANIZATION = "ORGANIZATION",
+  DEPUTY_DIRECTORATE = "DEPUTY_DIRECTORATE",
   DIRECTORATE = "DIRECTORATE",
   DIVISION = "DIVISION",
   DEPARTMENT = "DEPARTMENT",
   TEAM = "TEAM",
   BRANCH = "BRANCH",
+  OTHER = "OTHER",
 }
 
 export enum ElectionType {
@@ -103,40 +106,83 @@ export interface UserProfileResponse {
 
 // ── Organizational Entities ───────────────────────────────────────────────────
 
-
 export interface Organization {
   id: string;
   name: string;
-  code: string;
   description?: string | null;
   logoUrl?: string | null;
-  website?: string | null;
+  status?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateOrganizationDto {
+  name: string;
+  description?: string;
+  logoUrl?: string;
+}
+
+export interface UpdateOrganizationDto {
+  name?: string;
+  description?: string;
+  logoUrl?: string;
+  status?: string;
 }
 
 export interface OrganizationalUnit {
   id: string;
   organizationId: string;
   name: string;
-  code: string;
-  type: UnitType;
+  description?: string | null;
+  unitType: UnitType;
   parentId?: string | null;
   parent?: OrganizationalUnit | null;
   children?: OrganizationalUnit[];
+  headEmployeeId?: string | null;
+  status?: string;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface CreateOrganizationalUnitDto {
+  organizationId: string;
+  parentId?: string;
+  name: string;
+  description?: string;
+  unitType: UnitType;
+  headEmployeeId?: string;
+}
+
+export interface UpdateOrganizationalUnitDto {
+  name?: string;
+  description?: string;
+  unitType?: UnitType;
+  parentId?: string;
+  headEmployeeId?: string;
+  status?: string;
+}
+
 export interface Position {
   id: string;
-  organizationId: string;
-  title: string;
-  code: string;
+  name: string;
   level: number;
   description?: string | null;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreatePositionDto {
+  name: string;
+  description?: string;
+  level?: number;
+}
+
+export interface UpdatePositionDto {
+  name?: string;
+  description?: string;
+  level?: number;
+  isActive?: boolean;
 }
 
 export interface Employee {
@@ -153,6 +199,49 @@ export interface Employee {
   hiredAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateEmployeeDto {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  organizationalUnitId: string;
+  positionId?: string;
+  status?: EmployeeStatus;
+  hiredAt?: string;
+  profileImageUrl?: string;
+}
+
+export interface UpdateEmployeeDto {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  organizationalUnitId?: string;
+  positionId?: string;
+  status?: EmployeeStatus;
+  hiredAt?: string;
+  profileImageUrl?: string;
+}
+
+export interface CreateAccountDto {
+  employeeId: string;
+  temporaryPassword: string;
+}
+
+export interface AssignRoleDto {
+  userId: string;
+  roleId: string;
+  orgUnitId?: string;
+}
+
+export interface RoleEntity {
+  id: string;
+  name: SystemRole;
+  description?: string;
+  isSystemRole?: boolean;
 }
 
 export interface EmployeeWithDetails extends Employee {

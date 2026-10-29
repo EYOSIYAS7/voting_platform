@@ -24,12 +24,14 @@ export class EmployeeController {
   @ApiQuery({ name: 'unitId', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: EmployeeStatus })
   @ApiQuery({ name: 'positionId', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
   findAll(
     @Query('unitId') unitId?: string,
     @Query('status') status?: EmployeeStatus,
     @Query('positionId') positionId?: string,
+    @Query('search') search?: string,
   ) {
-    return this.service.findAll({ unitId, status, positionId });
+    return this.service.findAll({ unitId, status, positionId, search });
   }
 
   @Get(':id')

@@ -1,0 +1,244 @@
+.container {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 1.75rem 1.75rem 3rem;
+  width: 100%;
+}
+
+.header {
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--color-text-2);
+  margin: 0;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.75rem;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all var(--t-fast);
+}
+
+.tabBtn:hover {
+  color: var(--color-text);
+}
+
+.tabActive {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+/* Section styling */
+.sectionCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 2rem;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cardTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.cardDesc {
+  font-size: 0.825rem;
+  color: var(--color-text-3);
+  margin: 0.2rem 0 0;
+}
+
+/* Organization Selector Bar */
+.orgSelectBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  margin-bottom: 1.5rem;
+}
+
+.selectLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-2);
+  white-space: nowrap;
+}
+
+.orgSelect {
+  flex: 1;
+  max-width: 320px;
+}
+
+/* Table */
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-2);
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.rowTitle {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Modals */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 8, 28, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: var(--shadow-modal);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.modalTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-3);
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 4px;
+}
+
+.closeBtn:hover {
+  color: var(--color-text);
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.emptyState {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-3);
+}
+

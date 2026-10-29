@@ -1,0 +1,133 @@
+.treeRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nodeItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.nodeCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-md);
+  transition: all var(--t-fast);
+  gap: 0.75rem;
+}
+
+.nodeCard:hover {
+  border-color: var(--color-border-2);
+  background: var(--color-elevated);
+}
+
+.nodeLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.expandBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-3);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color var(--t-fast);
+}
+
+.expandBtn:hover {
+  color: var(--color-text);
+}
+
+.expandPlaceholder {
+  width: 20px;
+  height: 20px;
+}
+
+.nodeName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.typeBadge {
+  font-size: 0.675rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.typeDirectorate {
+  background: rgba(45, 87, 168, 0.12);
+  color: #2D57A8;
+}
+
+.typeDivision {
+  background: rgba(107, 74, 120, 0.12);
+  color: #6B4A78;
+}
+
+.typeDepartment {
+  background: rgba(19, 122, 77, 0.12);
+  color: #137A4D;
+}
+
+.typeTeam {
+  background: rgba(181, 101, 29, 0.12);
+  color: #B5651D;
+}
+
+.typeOther {
+  background: rgba(102, 122, 158, 0.12);
+  color: #667A9E;
+}
+
+.nodeDesc {
+  font-size: 0.775rem;
+  color: var(--color-text-3);
+  margin-left: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+.nodeActions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.childrenContainer {
+  margin-left: 1.5rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
+.emptyTree {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--color-text-3);
+  font-size: 0.875rem;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--r-md);
+}
+

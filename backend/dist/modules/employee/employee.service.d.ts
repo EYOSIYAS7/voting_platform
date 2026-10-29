@@ -9,6 +9,7 @@ export declare class EmployeeService {
         unitId?: string;
         status?: EmployeeStatus;
         positionId?: string;
+        search?: string;
     }): Promise<Employee[]>;
     findByUnitIds(unitIds: string[], status?: EmployeeStatus): Promise<Employee[]>;
     findOne(id: string): Promise<Employee>;

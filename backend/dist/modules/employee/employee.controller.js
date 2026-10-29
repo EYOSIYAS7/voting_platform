@@ -23,8 +23,8 @@ let EmployeeController = class EmployeeController {
     create(dto) {
         return this.service.create(dto);
     }
-    findAll(unitId, status, positionId) {
-        return this.service.findAll({ unitId, status, positionId });
+    findAll(unitId, status, positionId, search) {
+        return this.service.findAll({ unitId, status, positionId, search });
     }
     findOne(id) {
         return this.service.findOne(id);
@@ -50,11 +50,13 @@ __decorate([
     ApiQuery({ name: 'unitId', required: false, type: String }),
     ApiQuery({ name: 'status', required: false, enum: EmployeeStatus }),
     ApiQuery({ name: 'positionId', required: false, type: String }),
+    ApiQuery({ name: 'search', required: false, type: String }),
     __param(0, Query('unitId')),
     __param(1, Query('status')),
     __param(2, Query('positionId')),
+    __param(3, Query('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], EmployeeController.prototype, "findAll", null);
 __decorate([
