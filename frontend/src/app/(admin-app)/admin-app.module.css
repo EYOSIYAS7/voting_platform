@@ -1,0 +1,70 @@
+.adminShell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.adminWorkspace {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.adminMain {
+  flex: 1;
+}
+
+.adminFooter {
+  margin-top: auto;
+  padding: 1rem 1.75rem 1.35rem;
+  max-width: var(--measure);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--color-text-3);
+  font-size: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.adminFooter strong {
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+
+.loadingContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #00081C;
+  color: #9CB0D4;
+}
+
+.loadingText {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .adminShell {
+    grid-template-columns: 1fr;
+  }
+
+  .adminWorkspace {
+    grid-column: 1;
+  }
+}
+

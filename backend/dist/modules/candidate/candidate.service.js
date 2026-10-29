@@ -17,17 +17,20 @@ import { Candidate, CandidateStatus } from './entities/candidate.entity.js';
 import { Election, ElectionStatus } from '../election/entities/election.entity.js';
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
 import { Employee } from '../employee/employee.entity.js';
+import { Position } from '../position/position.entity.js';
 let CandidateService = class CandidateService {
     candidateRepo;
     electionRepo;
     voterRepo;
     employeeRepo;
+    positionRepo;
     dataSource;
-    constructor(candidateRepo, electionRepo, voterRepo, employeeRepo, dataSource) {
+    constructor(candidateRepo, electionRepo, voterRepo, employeeRepo, positionRepo, dataSource) {
         this.candidateRepo = candidateRepo;
         this.electionRepo = electionRepo;
         this.voterRepo = voterRepo;
         this.employeeRepo = employeeRepo;
+        this.positionRepo = positionRepo;
         this.dataSource = dataSource;
     }
     async requireElection(electionId) {
@@ -71,11 +74,42 @@ let CandidateService = class CandidateService {
             throw new BadRequestException(`Election has reached the maximum number of approved candidates (${election.maxCandidates}).`);
         }
     }
+    async assertCandidateLevelAllowed(election, candidateEmployeeId) {
+        if (!election.createdByEmployeeId)
+            return;
+        const creator = await this.employeeRepo.findOne({
+            where: { id: election.createdByEmployeeId },
+        });
+        if (!creator?.positionId)
+            return;
+        const creatorPosition = await this.positionRepo.findOne({
+            where: { id: creator.positionId },
+        });
+        if (!creatorPosition)
+            return;
+        const candidate = await this.employeeRepo.findOne({
+            where: { id: candidateEmployeeId },
+        });
+        if (!candidate?.positionId)
+            return;
+        const candidatePosition = await this.positionRepo.findOne({
+            where: { id: candidate.positionId },
+        });
+        if (!candidatePosition)
+            return;
+        if (candidatePosition.level <= creatorPosition.level) {
+            throw new ForbiddenException(`Cannot nominate ${candidate.firstName} ${candidate.lastName} — ` +
+                `their position level (${candidatePosition.level}: ${candidatePosition.name}) ` +
+                `is the same as or higher than the election creator's position level ` +
+                `(${creatorPosition.level}: ${creatorPosition.name}).`);
+        }
+    }
     async nominateByAdmin(electionId, dto, nominatedByEmployeeId) {
         const election = await this.requireElection(electionId);
         this.assertNominationOpen(election);
         await this.requireEmployee(dto.employeeId);
         await this.assertEmployeeEligible(election, dto.employeeId);
+        await this.assertCandidateLevelAllowed(election, dto.employeeId);
         const existing = await this.candidateRepo.findOne({
             where: { electionId, employeeId: dto.employeeId },
         });
@@ -97,6 +131,7 @@ let CandidateService = class CandidateService {
         const election = await this.requireElection(electionId);
         this.assertNominationOpen(election);
         await this.assertEmployeeEligible(election, employeeId);
+        await this.assertCandidateLevelAllowed(election, employeeId);
         const existing = await this.candidateRepo.findOne({
             where: { electionId, employeeId },
         });
@@ -210,7 +245,9 @@ CandidateService = __decorate([
     __param(1, InjectRepository(Election)),
     __param(2, InjectRepository(ElectionVoter)),
     __param(3, InjectRepository(Employee)),
+    __param(4, InjectRepository(Position)),
     __metadata("design:paramtypes", [Repository,
+        Repository,
         Repository,
         Repository,
         Repository,

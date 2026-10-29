@@ -33,6 +33,10 @@ let ElectionController = class ElectionController {
         const user = req.user;
         return this.service.getMyElections(user.employeeId);
     }
+    getMyCreatedElections(req) {
+        const user = req.user;
+        return this.service.getElectionsCreatedByMe(user.employeeId);
+    }
     findOne(id) {
         return this.service.findOneWithRules(id);
     }
@@ -91,6 +95,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ElectionController.prototype, "getMyElections", null);
+__decorate([
+    Get('created-by-me'),
+    ApiOperation({ summary: 'Get all elections created by the authenticated employee' }),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ElectionController.prototype, "getMyCreatedElections", null);
 __decorate([
     Get(':id'),
     ApiOperation({ summary: 'Get a single election with its eligibility rules' }),

@@ -8,6 +8,7 @@ export declare class ElectionController {
     create(dto: CreateElectionDto, req: Request): Promise<import("./entities/election.entity.js").Election>;
     findAll(organizationId?: string, status?: ElectionStatus): Promise<import("./entities/election.entity.js").Election[]>;
     getMyElections(req: Request): Promise<import("./entities/election.entity.js").Election[]>;
+    getMyCreatedElections(req: Request): Promise<import("./entities/election.entity.js").Election[]>;
     findOne(id: string): Promise<import("./entities/election.entity.js").Election & {
         eligibilityRules: import("./entities/eligibility-rule.entity.js").EligibilityRule[];
     }>;
