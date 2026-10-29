@@ -9,7 +9,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Election } from '../election/entities/election.entity.js';
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
 import { Candidate } from '../candidate/entities/candidate.entity.js';
-import { WalletBinding } from '../auth/entities/wallet-binding.entity.js';
 import { BlockchainService } from './blockchain.service.js';
 import { VotingService } from './voting.service.js';
 import { VotingController } from './voting.controller.js';
@@ -19,7 +18,7 @@ let VotingModule = class VotingModule {
 VotingModule = __decorate([
     Module({
         imports: [
-            TypeOrmModule.forFeature([Election, ElectionVoter, Candidate, WalletBinding]),
+            TypeOrmModule.forFeature([Election, ElectionVoter, Candidate]),
             AuthModule,
         ],
         providers: [BlockchainService, VotingService],

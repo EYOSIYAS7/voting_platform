@@ -20,7 +20,6 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator.js';
 import { UserAccount } from './entities/user-account.entity.js';
 import { LoginDto, ChangePasswordDto, CreateAccountDto, AssignRoleDto, TokenResponseDto, } from './dto/auth.dto.js';
-import { WalletChallengeDto, WalletVerifyDto } from './dto/wallet.dto.js';
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -34,18 +33,6 @@ let AuthController = class AuthController {
     }
     changePassword(userId, dto) {
         return this.authService.changePassword(userId, dto);
-    }
-    requestChallenge(employeeId, dto) {
-        return this.authService.requestWalletChallenge(employeeId, dto.walletAddress);
-    }
-    verifyWallet(employeeId, dto) {
-        return this.authService.verifyWalletSignature(employeeId, dto.walletAddress, dto.challenge, dto.signature);
-    }
-    getWallet(employeeId) {
-        return this.authService.getActiveWalletBinding(employeeId);
-    }
-    revokeWallet(bindingId, userId) {
-        return this.authService.revokeWalletBinding(bindingId, userId);
     }
     createAccount(dto, adminId) {
         return this.authService.createAccount(dto, adminId);
@@ -97,48 +84,6 @@ __decorate([
     __metadata("design:paramtypes", [String, ChangePasswordDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "changePassword", null);
-__decorate([
-    ApiBearerAuth(),
-    Post('wallet/challenge'),
-    HttpCode(HttpStatus.OK),
-    ApiOperation({ summary: 'Request a SIWE challenge nonce to sign with your wallet' }),
-    __param(0, CurrentUser('employeeId')),
-    __param(1, Body()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, WalletChallengeDto]),
-    __metadata("design:returntype", void 0)
-], AuthController.prototype, "requestChallenge", null);
-__decorate([
-    ApiBearerAuth(),
-    Post('wallet/verify'),
-    HttpCode(HttpStatus.OK),
-    ApiOperation({ summary: 'Submit signed challenge to verify wallet ownership and bind it' }),
-    __param(0, CurrentUser('employeeId')),
-    __param(1, Body()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, WalletVerifyDto]),
-    __metadata("design:returntype", void 0)
-], AuthController.prototype, "verifyWallet", null);
-__decorate([
-    ApiBearerAuth(),
-    Get('wallet'),
-    ApiOperation({ summary: 'Get your active verified wallet binding' }),
-    __param(0, CurrentUser('employeeId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], AuthController.prototype, "getWallet", null);
-__decorate([
-    ApiBearerAuth(),
-    Delete('wallet/:bindingId'),
-    HttpCode(HttpStatus.NO_CONTENT),
-    ApiOperation({ summary: 'Revoke a wallet binding' }),
-    __param(0, Param('bindingId', ParseUUIDPipe)),
-    __param(1, CurrentUser('userId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
-], AuthController.prototype, "revokeWallet", null);
 __decorate([
     ApiBearerAuth(),
     UseGuards(PermissionsGuard),

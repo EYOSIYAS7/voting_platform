@@ -10,42 +10,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Injectable, BadRequestException, ConflictException, ForbiddenException, NotFoundException, UnauthorizedException, } from '@nestjs/common';
+import { Injectable, ConflictException, ForbiddenException, NotFoundException, UnauthorizedException, } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, IsNull } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcrypt';
-import { verifyMessage, getAddress } from 'viem';
-import { randomBytes } from 'crypto';
 import { UserAccount } from './entities/user-account.entity.js';
 import { Role, SystemRole } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
-import { WalletBinding, WalletBindingStatus } from './entities/wallet-binding.entity.js';
 import { Employee } from '../employee/employee.entity.js';
 const BCRYPT_ROUNDS = 12;
 const MAX_FAILED_LOGINS = 5;
 const LOCKOUT_MINUTES = 15;
-const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 let AuthService = class AuthService {
     accountRepo;
     roleRepo;
     permissionRepo;
     scopeRepo;
-    walletRepo;
     employeeRepo;
     jwtService;
     configService;
     eventEmitter;
     dataSource;
-    constructor(accountRepo, roleRepo, permissionRepo, scopeRepo, walletRepo, employeeRepo, jwtService, configService, eventEmitter, dataSource) {
+    constructor(accountRepo, roleRepo, permissionRepo, scopeRepo, employeeRepo, jwtService, configService, eventEmitter, dataSource) {
         this.accountRepo = accountRepo;
         this.roleRepo = roleRepo;
         this.permissionRepo = permissionRepo;
         this.scopeRepo = scopeRepo;
-        this.walletRepo = walletRepo;
         this.employeeRepo = employeeRepo;
         this.jwtService = jwtService;
         this.configService = configService;
@@ -179,119 +173,14 @@ let AuthService = class AuthService {
     async getAllRoles() {
         return this.roleRepo.find();
     }
-    async requestWalletChallenge(employeeId, walletAddress) {
-        let checksummed;
-        try {
-            checksummed = getAddress(walletAddress);
-        }
-        catch {
-            throw new BadRequestException('Invalid Ethereum address');
-        }
-        const conflictBinding = await this.walletRepo.findOne({
-            where: { walletAddress: checksummed, status: WalletBindingStatus.VERIFIED },
-        });
-        if (conflictBinding && conflictBinding.employeeId !== employeeId) {
-            throw new ConflictException('This wallet address is already bound to another employee');
-        }
-        await this.walletRepo
-            .createQueryBuilder()
-            .update(WalletBinding)
-            .set({ status: WalletBindingStatus.REVOKED })
-            .where('employeeId = :employeeId AND status = :status', {
-            employeeId,
-            status: WalletBindingStatus.PENDING,
-        })
-            .execute();
-        const challenge = `Sign this message to link your wallet to your organizational account.\n\nNonce: ${randomBytes(16).toString('hex')}\nTimestamp: ${new Date().toISOString()}`;
-        const binding = this.walletRepo.create({
-            employeeId,
-            walletAddress: checksummed,
-            status: WalletBindingStatus.PENDING,
-            challenge,
-            challengeIssuedAt: new Date(),
-        });
-        await this.walletRepo.save(binding);
-        return { challenge, message: 'Sign this message in your wallet to verify ownership' };
-    }
-    async verifyWalletSignature(employeeId, walletAddress, challenge, signature) {
-        let checksummed;
-        try {
-            checksummed = getAddress(walletAddress);
-        }
-        catch {
-            throw new BadRequestException('Invalid Ethereum address');
-        }
-        const binding = await this.walletRepo.findOne({
-            where: {
-                employeeId,
-                walletAddress: checksummed,
-                status: WalletBindingStatus.PENDING,
-            },
-        });
-        if (!binding)
-            throw new NotFoundException('No pending wallet binding found');
-        if (!binding.challengeIssuedAt ||
-            Date.now() - binding.challengeIssuedAt.getTime() > CHALLENGE_TTL_MS) {
-            throw new BadRequestException('Challenge has expired. Please request a new one.');
-        }
-        if (binding.challenge !== challenge) {
-            throw new BadRequestException('Challenge mismatch');
-        }
-        let isValid = false;
-        try {
-            isValid = await verifyMessage({
-                address: checksummed,
-                message: challenge,
-                signature: signature,
-            });
-        }
-        catch {
-            throw new BadRequestException('Signature verification failed');
-        }
-        if (!isValid)
-            throw new UnauthorizedException('Signature does not match wallet address');
-        await this.walletRepo
-            .createQueryBuilder()
-            .update(WalletBinding)
-            .set({ status: WalletBindingStatus.REVOKED })
-            .where('employeeId = :employeeId AND status = :status AND id != :id', {
-            employeeId,
-            status: WalletBindingStatus.VERIFIED,
-            id: binding.id,
-        })
-            .execute();
-        binding.status = WalletBindingStatus.VERIFIED;
-        binding.verifiedAt = new Date();
-        binding.challenge = null;
-        const saved = await this.walletRepo.save(binding);
-        this.eventEmitter.emit('wallet.binding.verified', {
-            employeeId,
-            walletAddress: checksummed,
-        });
-        return saved;
-    }
-    async getActiveWalletBinding(employeeId) {
-        return this.walletRepo.findOne({
-            where: { employeeId, status: WalletBindingStatus.VERIFIED },
-        });
-    }
-    async revokeWalletBinding(bindingId, revokedBy) {
-        const binding = await this.walletRepo.findOne({ where: { id: bindingId } });
-        if (!binding)
-            throw new NotFoundException('Wallet binding not found');
-        binding.status = WalletBindingStatus.REVOKED;
-        await this.walletRepo.save(binding);
-        this.eventEmitter.emit('wallet.binding.revoked', { bindingId, revokedBy });
-    }
     async getProfile(user) {
-        const [account, employee, scopes, walletBinding] = await Promise.all([
+        const [account, employee, scopes] = await Promise.all([
             this.accountRepo.findOne({ where: { id: user.userId } }),
             this.employeeRepo.findOne({
                 where: { id: user.employeeId },
                 relations: ['organizationalUnit', 'position'],
             }),
             this.scopeRepo.find({ where: { userId: user.userId }, relations: ['role'] }),
-            this.getActiveWalletBinding(user.employeeId),
         ]);
         return {
             account: {
@@ -302,9 +191,6 @@ let AuthService = class AuthService {
             },
             employee,
             roles: scopes.map((s) => ({ role: s.role.name, orgUnitId: s.orgUnitId })),
-            walletBinding: walletBinding
-                ? { address: walletBinding.walletAddress, verifiedAt: walletBinding.verifiedAt }
-                : null,
         };
     }
 };
@@ -314,10 +200,8 @@ AuthService = __decorate([
     __param(1, InjectRepository(Role)),
     __param(2, InjectRepository(Permission)),
     __param(3, InjectRepository(UserRoleScope)),
-    __param(4, InjectRepository(WalletBinding)),
-    __param(5, InjectRepository(Employee)),
+    __param(4, InjectRepository(Employee)),
     __metadata("design:paramtypes", [Repository,
-        Repository,
         Repository,
         Repository,
         Repository,

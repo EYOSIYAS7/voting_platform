@@ -1,314 +1,138 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useAccount } from "wagmi";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { electionsApi } from "@/lib/api/elections";
 import {
-  useAllElectionIds,
-  useIsAdmin,
-  useSuperAdmin,
-  useCreateElection,
-  useGrantAdmin,
-  useContractAddress,
-} from "@/lib/hooks/useContract";
-import { VOTING_PLATFORM_ABI, Election } from "@/lib/abi/votingPlatform";
-import { useReadContracts } from "wagmi";
-import {
-  Plus,
-  X,
-  CheckCircle,
-  AlertTriangle,
-  Info,
-} from "lucide-react";
+  Election,
+  ElectionStatus,
+  CreateElectionDto,
+  ElectionType,
+} from "@/lib/types/api";
+import { Plus, X, CheckCircle, AlertTriangle, Info } from "lucide-react";
 import styles from "./admin.module.css";
 
+const STATUS_CLS: Record<ElectionStatus, string> = {
+  [ElectionStatus.DRAFT]:        "status-pending",
+  [ElectionStatus.REGISTRATION]: "status-registration",
+  [ElectionStatus.UPCOMING]:     "status-upcoming",
+  [ElectionStatus.ACTIVE]:       "status-active",
+  [ElectionStatus.ENDED]:        "status-ended",
+  [ElectionStatus.CANCELLED]:    "status-ended",
+};
+
+const STATUS_LABEL: Record<ElectionStatus, string> = {
+  [ElectionStatus.DRAFT]:        "Draft",
+  [ElectionStatus.REGISTRATION]: "Registration",
+  [ElectionStatus.UPCOMING]:     "Upcoming",
+  [ElectionStatus.ACTIVE]:       "Open",
+  [ElectionStatus.ENDED]:        "Closed",
+  [ElectionStatus.CANCELLED]:    "Cancelled",
+};
+
 export default function AdminDashboard() {
-  const { address, isConnected } = useAccount();
-  const contractAddress = useContractAddress();
+  const { isAuthenticated, isAdmin, user } = useAuthStore();
 
-  // Access control queries
-  const { data: isAdmin, isLoading: isRoleLoading } = useIsAdmin(address);
-  const { data: superAdminAddress, isLoading: isSuperAdminLoading } = useSuperAdmin();
-  const isSuperAdmin = !!(
-    address &&
-    superAdminAddress &&
-    address.toLowerCase() === (superAdminAddress as string).toLowerCase()
-  );
+  // ── Data ───────────────────────────────────────────────────────────────────
+  const [elections, setElections] = useState<Election[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Elections queries
-  const {
-    data: electionIdsRaw,
-    isLoading: isIdsLoading,
-    refetch: refetchIds,
-  } = useAllElectionIds();
-  const electionIds = electionIdsRaw as readonly bigint[] | undefined;
+  const loadElections = () => {
+    setIsLoading(true);
+    electionsApi.getElections()
+      .then(setElections)
+      .catch(() => showToast("Failed to load elections", "error"))
+      .finally(() => setIsLoading(false));
+  };
 
-  // Prepare batch read for election details
-  const electionQueries = useMemo(() => {
-    if (!electionIds) return [];
-    return electionIds.map((id) => ({
-      address: contractAddress,
-      abi: VOTING_PLATFORM_ABI,
-      functionName: "getElection",
-      args: [id],
-    }));
-  }, [electionIds, contractAddress]);
+  useEffect(() => { loadElections(); }, []);
 
-  const {
-    data: electionsData,
-    isLoading: isDetailsLoading,
-    refetch: refetchDetails,
-  } = useReadContracts({
-    contracts: electionQueries,
-    query: { enabled: electionQueries.length > 0 },
-  });
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    return {
+      total:        elections.length,
+      active:       elections.filter((e) => e.status === ElectionStatus.ACTIVE).length,
+      upcoming:     elections.filter((e) => e.status === ElectionStatus.UPCOMING || e.status === ElectionStatus.REGISTRATION).length,
+      ended:        elections.filter((e) => e.status === ElectionStatus.ENDED).length,
+    };
+  }, [elections]);
 
-  // Local state for modal toggling
+  // ── Create election modal ──────────────────────────────────────────────────
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Form states for creating election
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [regStart, setRegStart] = useState("");
-  const [regEnd, setRegEnd] = useState("");
-  const [voteStart, setVoteStart] = useState("");
-  const [voteEnd, setVoteEnd] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [regDeadline, setRegDeadline] = useState("");
+  const [maxCandidates, setMaxCandidates] = useState("10");
 
-  // Form states for granting admin
-  const [newAdminAddress, setNewAdminAddress] = useState("");
-
-  // Mutations
-  const { writeContract: createElection, isPending: isCreatePending } =
-    useCreateElection();
-  const { writeContract: grantAdmin, isPending: isGrantPending } =
-    useGrantAdmin();
-
-  // Local state for toast notification
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    show: false,
-    message: "",
-    type: "info",
-  });
-
-  const showToast = (message: string, type: "success" | "error" | "info") => {
-    setToast({ show: true, message, type });
+  const resetCreateForm = () => {
+    setTitle(""); setDescription(""); setStartDate("");
+    setEndDate(""); setRegDeadline(""); setMaxCandidates("10");
   };
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  const [toast, setToast] = useState<{
+    show: boolean; message: string; type: "success" | "error" | "info";
+  }>({ show: false, message: "", type: "info" });
+
+  const showToast = (message: string, type: "success" | "error" | "info") =>
+    setToast({ show: true, message, type });
 
   useEffect(() => {
-    if (toast.show) {
-      const timer = setTimeout(() => {
-        setToast((prev) => ({ ...prev, show: false }));
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    if (!toast.show) return;
+    const t = setTimeout(() => setToast((p) => ({ ...p, show: false })), 5000);
+    return () => clearTimeout(t);
   }, [toast.show]);
 
-  // Parse and status elections
-  const electionsList = useMemo(() => {
-    if (!electionsData) return [];
-
-    const now = Math.floor(Date.now() / 1000);
-
-    return electionsData
-      .map((res: any) => {
-        const val = res.result || res;
-        if (!val || !val.exists) return null;
-
-        const election: Election = {
-          id: val.id,
-          title: val.title,
-          description: val.description,
-          imageUrl: val.imageUrl,
-          registrationStart: val.registrationStart,
-          registrationEnd: val.registrationEnd,
-          votingStart: val.votingStart,
-          votingEnd: val.votingEnd,
-          totalVotes: val.totalVotes,
-          exists: val.exists,
-        };
-
-        // Determine status
-        const rStart = Number(election.registrationStart);
-        const rEnd = Number(election.registrationEnd);
-        const vStart = Number(election.votingStart);
-        const vEnd = Number(election.votingEnd);
-
-        let status: Election["status"] = "Ended";
-        if (now < rStart) status = "Pending";
-        else if (now <= rEnd) status = "Registration";
-        else if (now < vStart) status = "Upcoming";
-        else if (now <= vEnd) status = "Active";
-
-        return { ...election, status };
-      })
-      .filter((e): e is NonNullable<typeof e> => e !== null);
-  }, [electionsData]);
-
-  // Compute analytics
-  const stats = useMemo(() => {
-    let totalVotes = 0n;
-    let activeCount = 0;
-    let upcomingCount = 0;
-    let endedCount = 0;
-
-    electionsList.forEach((e) => {
-      totalVotes += e.totalVotes;
-      if (e.status === "Active") activeCount++;
-      else if (e.status === "Upcoming" || e.status === "Registration")
-        upcomingCount++;
-      else if (e.status === "Ended") endedCount++;
-    });
-
-    return {
-      totalElections: electionsList.length,
-      activeCount,
-      upcomingCount,
-      endedCount,
-      totalVotes,
-    };
-  }, [electionsList]);
-
-  // Form submit handlers
-  const handleCreateElection = (e: React.FormEvent) => {
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleCreateElection = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!title.trim()) {
-      showToast("Title is required", "error");
-      return;
+    if (!title.trim()) { showToast("Title is required", "error"); return; }
+    if (!startDate || !endDate) { showToast("Start and end dates are required", "error"); return; }
+    if (new Date(endDate) <= new Date(startDate)) {
+      showToast("End date must be after start date", "error"); return;
     }
 
-    // Convert datetimes to unix seconds
-    const rStartUnix = Math.floor(new Date(regStart).getTime() / 1000);
-    const rEndUnix = Math.floor(new Date(regEnd).getTime() / 1000);
-    const vStartUnix = Math.floor(new Date(voteStart).getTime() / 1000);
-    const vEndUnix = Math.floor(new Date(voteEnd).getTime() / 1000);
-
-    const now = Math.floor(Date.now() / 1000);
-
-    // Validations
-    if (rEndUnix <= rStartUnix) {
-      showToast("Registration end must be after registration start", "error");
-      return;
+    setIsCreating(true);
+    try {
+      const dto: CreateElectionDto = {
+        title:                title.trim(),
+        description:          description.trim() || undefined,
+        electionType:         ElectionType.GENERAL,
+        organizationId:       user?.scopes?.[0]?.orgUnitId ?? "",   // fallback; admin sets org
+        startDate:            new Date(startDate).toISOString(),
+        endDate:              new Date(endDate).toISOString(),
+        registrationDeadline: regDeadline ? new Date(regDeadline).toISOString() : undefined,
+        maxCandidates:        parseInt(maxCandidates, 10) || 10,
+      };
+      await electionsApi.createElection(dto);
+      showToast("Election created successfully!", "success");
+      setIsCreateModalOpen(false);
+      resetCreateForm();
+      loadElections();
+    } catch (err: any) {
+      showToast(err.message || "Failed to create election", "error");
+    } finally {
+      setIsCreating(false);
     }
-    if (vStartUnix < rEndUnix) {
-      showToast(
-        "Voting start must be after or equal to registration end",
-        "error",
-      );
-      return;
-    }
-    if (vEndUnix <= vStartUnix) {
-      showToast("Voting end must be after voting start", "error");
-      return;
-    }
-    if (vEndUnix <= now) {
-      showToast("Voting end must be in the future", "error");
-      return;
-    }
-
-    createElection(
-      {
-        address: contractAddress,
-        abi: VOTING_PLATFORM_ABI,
-        functionName: "createElection",
-        args: [
-          title,
-          description,
-          imageUrl,
-          BigInt(rStartUnix),
-          BigInt(rEndUnix),
-          BigInt(vStartUnix),
-          BigInt(vEndUnix),
-        ],
-      },
-      {
-        onSuccess: () => {
-          showToast("Election created successfully!", "success");
-          setIsCreateModalOpen(false);
-          // Clear inputs
-          setTitle("");
-          setDescription("");
-          setImageUrl("");
-          setRegStart("");
-          setRegEnd("");
-          setVoteStart("");
-          setVoteEnd("");
-          // Refresh list
-          refetchIds();
-          refetchDetails();
-        },
-        onError: (err: any) => {
-          console.error(err);
-          const msg =
-            err.shortMessage || err.message || "Failed to create election";
-          showToast(msg, "error");
-        },
-      },
-    );
   };
 
-  const handleGrantAdmin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAdminAddress.trim()) {
-      showToast("Admin address is required", "error");
-      return;
-    }
-
-    grantAdmin(
-      {
-        address: contractAddress,
-        abi: VOTING_PLATFORM_ABI,
-        functionName: "grantAdmin",
-        args: [newAdminAddress as `0x${string}`],
-      },
-      {
-        onSuccess: () => {
-          showToast(`Admin role granted to ${newAdminAddress}`, "success");
-          setNewAdminAddress("");
-        },
-        onError: (err: any) => {
-          console.error(err);
-          const msg =
-            err.shortMessage ||
-            err.message ||
-            "Failed to grant admin privileges";
-          showToast(msg, "error");
-        },
-      },
-    );
-  };
-
-  const isPageLoading = isRoleLoading || isSuperAdminLoading || (isIdsLoading && !!electionIds);
-
-  if (isPageLoading) {
-    return (
-      <div className={styles.loaderContainer}>
-        <div className="spinner" />
-      </div>
-    );
-  }
-
-  // Access Control: Block if not admin
-  if (!isConnected || !isAdmin) {
+  // ── Access guard ───────────────────────────────────────────────────────────
+  if (!isAuthenticated || !isAdmin()) {
     return (
       <div className="container">
         <div className={styles.denied}>
           <h1 className={styles.deniedTitle}>Admin access required</h1>
           <p className={styles.deniedDesc}>
-            {!isConnected
-              ? "Connect a wallet in the header to check whether you can administer elections."
-              : "This wallet is not an administrator."}
+            {!isAuthenticated
+              ? "Sign in with your INSA account to access the admin panel."
+              : "Your account does not have administrator privileges."}
           </p>
-          {isConnected && (
-            <Link href="/" className="btn btn-outline btn-sm">
-              Home
-            </Link>
-          )}
+          <Link href="/" className="btn btn-outline btn-sm">Home</Link>
         </div>
       </div>
     );
@@ -319,42 +143,33 @@ export default function AdminDashboard() {
       <div className="page-head">
         <div>
           <h1>Admin</h1>
-          <p>Create elections, review candidates, and grant administrators.</p>
+          <p>Create elections, review candidates, and manage the ballot.</p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
+        <button className="btn btn-primary" onClick={() => setIsCreateModalOpen(true)}>
           <Plus size={16} />
           New election
         </button>
       </div>
 
+      {/* Stats row */}
       <div className="stat-row">
-        <div className="stat">
-          <span>Elections</span>
-          <strong>{stats.totalElections}</strong>
-        </div>
-        <div className="stat">
-          <span>Open</span>
-          <strong>{stats.activeCount}</strong>
-        </div>
-        <div className="stat">
-          <span>Upcoming</span>
-          <strong>{stats.upcomingCount}</strong>
-        </div>
-        <div className="stat">
-          <span>Votes recorded</span>
-          <strong>{Number(stats.totalVotes).toLocaleString()}</strong>
-        </div>
+        <div className="stat"><span>Elections</span><strong>{isLoading ? "—" : stats.total}</strong></div>
+        <div className="stat"><span>Open</span><strong>{isLoading ? "—" : stats.active}</strong></div>
+        <div className="stat"><span>Upcoming</span><strong>{isLoading ? "—" : stats.upcoming}</strong></div>
+        <div className="stat"><span>Closed</span><strong>{isLoading ? "—" : stats.ended}</strong></div>
       </div>
 
+      {/* Elections table */}
       <div className={styles.adminLayout}>
         <section className={`panel ${styles.tablePanel}`}>
           <h2 className={styles.panelTitle}>Elections</h2>
 
           <div className={styles.tableWrapper}>
-            {electionsList.length === 0 ? (
+            {isLoading ? (
+              <div style={{ padding: "2rem", display: "flex", justifyContent: "center" }}>
+                <div className="spinner" />
+              </div>
+            ) : elections.length === 0 ? (
               <div className="empty-state">
                 <h3>No elections yet</h3>
                 <p>Create one to open registration and voting windows.</p>
@@ -364,40 +179,42 @@ export default function AdminDashboard() {
                 <thead>
                   <tr>
                     <th>Title</th>
+                    <th>Type</th>
                     <th>Status</th>
-                    <th>Votes</th>
+                    <th>Voting window</th>
+                    <th>On-chain</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {electionsList.map((election) => (
-                    <tr key={election.id.toString()}>
-                      <td className={styles.electionNameCol}>
-                        {election.title}
-                      </td>
+                  {elections.map((election) => (
+                    <tr key={election.id}>
+                      <td className={styles.electionNameCol}>{election.title}</td>
                       <td>
-                        <span
-                          className={
-                            election.status === "Active"
-                              ? "status-active"
-                              : election.status === "Registration"
-                                ? "status-registration"
-                                : election.status === "Upcoming"
-                                  ? "status-upcoming"
-                                  : election.status === "Pending"
-                                    ? "status-pending"
-                                    : "status-ended"
-                          }
-                        >
-                          {election.status === "Active"
-                            ? "Open"
-                            : election.status === "Registration"
-                              ? "Registration"
-                              : election.status}
+                        <span style={{ fontSize: "0.78rem", opacity: 0.7 }}>
+                          {election.electionType.replace("_", " ")}
                         </span>
                       </td>
                       <td>
-                        {Number(election.totalVotes).toLocaleString()}
+                        <span className={`status ${STATUS_CLS[election.status]}`}>
+                          {STATUS_LABEL[election.status]}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: "0.8rem", opacity: 0.8 }}>
+                        {new Date(election.startDate).toLocaleDateString()} –{" "}
+                        {new Date(election.endDate).toLocaleDateString()}
+                      </td>
+                      <td>
+                        {election.onChainElectionId ? (
+                          <span
+                            title={`On-chain ID: ${election.onChainElectionId}`}
+                            style={{ color: "var(--color-success)", fontSize: "0.8rem", fontWeight: 600 }}
+                          >
+                            ✓ Published
+                          </span>
+                        ) : (
+                          <span style={{ opacity: 0.45, fontSize: "0.8rem" }}>Pending</span>
+                        )}
                       </td>
                       <td>
                         <Link
@@ -414,41 +231,9 @@ export default function AdminDashboard() {
             )}
           </div>
         </section>
-
-        {isSuperAdmin && (
-          <section className={`panel panel-pad ${styles.grantSection}`}>
-            <h2 className={styles.panelTitle}>Grant administrator</h2>
-            <p className={styles.grantCopy}>
-              Super admins can add wallets that create elections and approve candidates.
-              Only you can grant or revoke that role.
-            </p>
-            <form onSubmit={handleGrantAdmin} className={styles.grantForm}>
-              <label htmlFor="new-admin" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>
-                Wallet address
-              </label>
-              <input
-                id="new-admin"
-                type="text"
-                className="form-input"
-                placeholder="0x…"
-                value={newAdminAddress}
-                onChange={(e) => setNewAdminAddress(e.target.value)}
-                disabled={isGrantPending}
-                required
-              />
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isGrantPending}
-              >
-                {isGrantPending ? "Granting…" : "Grant"}
-              </button>
-            </form>
-          </section>
-        )}
       </div>
 
-      {/* ─── Create Election Modal ─────────────────────────────────────── */}
+      {/* ─── Create Election Modal ─────────────────────────────────────────── */}
       {isCreateModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
@@ -456,7 +241,7 @@ export default function AdminDashboard() {
               <h3>New election</h3>
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => { setIsCreateModalOpen(false); resetCreateForm(); }}
                 className={styles.iconClose}
                 aria-label="Close"
               >
@@ -465,12 +250,14 @@ export default function AdminDashboard() {
             </div>
 
             <p className={styles.modalLead}>
-              Set registration and voting windows. The contract enforces those times.
+              Fill in the election details. After creating, go to the election&apos;s
+              manage page to add eligibility rules, review candidates, and publish
+              on-chain.
             </p>
 
             <form onSubmit={handleCreateElection}>
               <div className="form-group" style={{ marginBottom: "1.1rem" }}>
-                <label className="form-label" htmlFor="el-title">Title</label>
+                <label className="form-label" htmlFor="el-title">Title *</label>
                 <input
                   id="el-title"
                   type="text"
@@ -493,62 +280,53 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="form-group" style={{ marginBottom: "1.35rem" }}>
-                <label className="form-label" htmlFor="el-img">Cover image URL (optional)</label>
-                <input
-                  id="el-img"
-                  type="url"
-                  className="form-input"
-                  placeholder="https://"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-              </div>
-
               <p className={styles.scheduleLabel}>Schedule</p>
-
               <div className={styles.formGrid}>
                 <div className="form-group">
-                  <label className="form-label">Registration opens</label>
+                  <label className="form-label" htmlFor="el-reg-deadline">Registration deadline</label>
                   <input
+                    id="el-reg-deadline"
                     type="datetime-local"
                     className="form-input"
-                    value={regStart}
-                    onChange={(e) => setRegStart(e.target.value)}
+                    value={regDeadline}
+                    onChange={(e) => setRegDeadline(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="el-start">Voting opens *</label>
+                  <input
+                    id="el-start"
+                    type="datetime-local"
+                    className="form-input"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Registration closes</label>
+                  <label className="form-label" htmlFor="el-end">Voting closes *</label>
                   <input
+                    id="el-end"
                     type="datetime-local"
                     className="form-input"
-                    value={regEnd}
-                    onChange={(e) => setRegEnd(e.target.value)}
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Voting opens</label>
+                  <label className="form-label" htmlFor="el-max">Max candidates</label>
                   <input
-                    type="datetime-local"
+                    id="el-max"
+                    type="number"
                     className="form-input"
-                    value={voteStart}
-                    onChange={(e) => setVoteStart(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Voting closes</label>
-                  <input
-                    type="datetime-local"
-                    className="form-input"
-                    value={voteEnd}
-                    onChange={(e) => setVoteEnd(e.target.value)}
-                    required
+                    min="1"
+                    max="100"
+                    value={maxCandidates}
+                    onChange={(e) => setMaxCandidates(e.target.value)}
                   />
                 </div>
               </div>
@@ -557,16 +335,12 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   className="btn btn-outline"
-                  onClick={() => setIsCreateModalOpen(false)}
+                  onClick={() => { setIsCreateModalOpen(false); resetCreateForm(); }}
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isCreatePending}
-                >
-                  {isCreatePending ? "Creating…" : "Create election"}
+                <button type="submit" className="btn btn-primary" disabled={isCreating}>
+                  {isCreating ? "Creating…" : "Create election"}
                 </button>
               </div>
             </form>
@@ -574,25 +348,13 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ─── Toast Container ────────────────────────────────────────────── */}
+      {/* Toast */}
       {toast.show && (
         <div className="toast-container">
           <div className={`toast animate-fade-in toast-${toast.type}`}>
-            {toast.type === "success" && (
-              <CheckCircle
-                size={18}
-                style={{ color: "var(--color-success)" }}
-              />
-            )}
-            {toast.type === "error" && (
-              <AlertTriangle
-                size={18}
-                style={{ color: "var(--color-danger)" }}
-              />
-            )}
-            {toast.type === "info" && (
-              <Info size={18} style={{ color: "var(--color-accent)" }} />
-            )}
+            {toast.type === "success" && <CheckCircle size={18} style={{ color: "var(--color-success)" }} />}
+            {toast.type === "error"   && <AlertTriangle size={18} style={{ color: "var(--color-danger)" }} />}
+            {toast.type === "info"    && <Info size={18} style={{ color: "var(--color-accent)" }} />}
             <span>{toast.message}</span>
           </div>
         </div>

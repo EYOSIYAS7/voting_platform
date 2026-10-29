@@ -13,7 +13,6 @@ import { UserAccount } from './entities/user-account.entity.js';
 import { Role } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
-import { WalletBinding } from './entities/wallet-binding.entity.js';
 import { Employee } from '../employee/employee.entity.js';
 import { LocalStrategy } from './strategies/local.strategy.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
@@ -42,7 +41,6 @@ AuthModule = __decorate([
                 Role,
                 Permission,
                 UserRoleScope,
-                WalletBinding,
                 Employee,
             ]),
         ],

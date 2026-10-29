@@ -1,157 +1,187 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { electionsApi } from "@/lib/api/elections";
 import {
-  useElection,
-  useElectionStatus,
-  useCandidateIds,
-  useIsAdmin,
-  useApproveCandidate,
-  useRejectCandidate,
-  useAddCandidate,
-  useContractAddress,
-} from "@/lib/hooks/useContract";
-import {
-  VOTING_PLATFORM_ABI,
   Election,
+  ElectionStatus,
   Candidate,
-} from "@/lib/abi/votingPlatform";
-import { useReadContracts } from "wagmi";
+  CandidateStatus,
+  ReviewCandidateDto,
+} from "@/lib/types/api";
 import {
   X,
   Check,
   CheckCircle,
   AlertTriangle,
   Info,
+  Link2,
+  UploadCloud,
+  Users,
+  RefreshCw,
 } from "lucide-react";
 import styles from "./admin-election.module.css";
 
-const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  Active: { label: "Open", cls: "status-active" },
-  Upcoming: { label: "Voting soon", cls: "status-upcoming" },
-  Registration: { label: "Registration", cls: "status-registration" },
-  Pending: { label: "Not yet open", cls: "status-pending" },
-  Ended: { label: "Closed", cls: "status-ended" },
+const STATUS_CLS: Record<ElectionStatus, string> = {
+  [ElectionStatus.DRAFT]:        "status-pending",
+  [ElectionStatus.REGISTRATION]: "status-registration",
+  [ElectionStatus.UPCOMING]:     "status-upcoming",
+  [ElectionStatus.ACTIVE]:       "status-active",
+  [ElectionStatus.ENDED]:        "status-ended",
+  [ElectionStatus.CANCELLED]:    "status-ended",
+};
+
+const STATUS_LABEL: Record<ElectionStatus, string> = {
+  [ElectionStatus.DRAFT]:        "Draft",
+  [ElectionStatus.REGISTRATION]: "Registration",
+  [ElectionStatus.UPCOMING]:     "Upcoming",
+  [ElectionStatus.ACTIVE]:       "Open",
+  [ElectionStatus.ENDED]:        "Closed",
+  [ElectionStatus.CANCELLED]:    "Cancelled",
 };
 
 export default function AdminElectionPage() {
   const params = useParams();
-  const electionId = BigInt(params.id as string);
+  const electionDbId = params.id as string;
+  const { isAuthenticated, isAdmin } = useAuthStore();
 
-  const { address, isConnected } = useAccount();
-  const contractAddress = useContractAddress();
+  // ── Data state ─────────────────────────────────────────────────────────────
+  const [election, setElection]       = useState<Election | null>(null);
+  const [candidates, setCandidates]   = useState<Candidate[]>([]);
+  const [isLoading, setIsLoading]     = useState(true);
 
-  // Queries
-  const { data: isAdmin, isLoading: isRoleLoading } = useIsAdmin(address);
-  const {
-    data: electionRaw,
-    isLoading: isElectionLoading,
-    refetch: refetchElection,
-  } = useElection(electionId);
-  const { data: statusRaw, refetch: refetchStatus } =
-    useElectionStatus(electionId);
-  const {
-    data: candidateIdsRaw,
-    isLoading: isIdsLoading,
-    refetch: refetchIds,
-  } = useCandidateIds(electionId);
-  const candidateIds = candidateIdsRaw as readonly bigint[] | undefined;
+  // ── Action loading states ─────────────────────────────────────────────────
+  const [reviewingId, setReviewingId]           = useState<string | null>(null);
+  const [publishingElection, setPublishingElection] = useState(false);
+  const [publishingCandId, setPublishingCandId] = useState<string | null>(null);
+  const [computingVoters, setComputingVoters]   = useState(false);
 
-  // Prepare batch read for candidate details
-  const candidateQueries = useMemo(() => {
-    if (!candidateIds) return [];
-    return candidateIds.map((cid) => ({
-      address: contractAddress,
-      abi: VOTING_PLATFORM_ABI as any,
-      functionName: "getCandidate",
-      args: [electionId, cid],
-    }));
-  }, [candidateIds, electionId, contractAddress]);
-
-  const {
-    data: candidatesData,
-    isLoading: isCandidatesLoading,
-    refetch: refetchCandidates,
-  } = useReadContracts({
-    contracts: candidateQueries as any,
-    query: { enabled: candidateQueries.length > 0 },
-  });
-
-  // Local form states for direct candidate adding
-  const [candName, setCandName] = useState("");
-  const [candDesc, setCandDesc] = useState("");
-  const [candImg, setCandImg] = useState("");
-  const [candWallet, setCandWallet] = useState("");
-
-  // Local state for toast notification
+  // ── Toast ──────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    show: false,
-    message: "",
-    type: "info",
-  });
+    show: boolean; message: string; type: "success" | "error" | "info"; detail?: string;
+  }>({ show: false, message: "", type: "info" });
 
-  const showToast = (message: string, type: "success" | "error" | "info") => {
-    setToast({ show: true, message, type });
-  };
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info",
+    detail?: string
+  ) => setToast({ show: true, message, type, detail });
 
   useEffect(() => {
-    if (toast.show) {
-      const timer = setTimeout(() => {
-        setToast((prev) => ({ ...prev, show: false }));
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    if (!toast.show) return;
+    const t = setTimeout(() => setToast((p) => ({ ...p, show: false })), 7000);
+    return () => clearTimeout(t);
   }, [toast.show]);
 
-  // Mutations
-  const { writeContract: addCandidate, isPending: isAddPending } =
-    useAddCandidate();
-  const { writeContract: approveCandidate, isPending: isApprovePending } =
-    useApproveCandidate();
-  const { writeContract: rejectCandidate, isPending: isRejectPending } =
-    useRejectCandidate();
+  // ── Load data ──────────────────────────────────────────────────────────────
+  const loadData = useCallback(async () => {
+    try {
+      const [electionData, allCandidates] = await Promise.all([
+        electionsApi.getElection(electionDbId),
+        electionsApi.getCandidates(electionDbId),   // no status filter = all statuses
+      ]);
+      setElection(electionData);
+      setCandidates(allCandidates);
+    } catch (err: any) {
+      showToast(err.message || "Failed to load election", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [electionDbId]);
 
-  // Parse Candidates List
-  const { pendingCandidates, approvedCandidates } = useMemo(() => {
-    const pending: Candidate[] = [];
-    const approved: Candidate[] = [];
+  useEffect(() => { loadData(); }, [loadData]);
 
-    if (!candidatesData) return { pendingCandidates: pending, approvedCandidates: approved };
+  // ── Candidate review ───────────────────────────────────────────────────────
+  const handleReview = async (candidateId: string, status: CandidateStatus.APPROVED | CandidateStatus.REJECTED, reason?: string) => {
+    setReviewingId(candidateId);
+    try {
+      const dto: ReviewCandidateDto = { status, rejectionReason: reason };
+      await electionsApi.reviewCandidate(electionDbId, candidateId, dto);
+      showToast(
+        status === CandidateStatus.APPROVED
+          ? "Candidate approved and added to the ballot."
+          : "Candidate rejected.",
+        "success"
+      );
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || "Review failed", "error");
+    } finally {
+      setReviewingId(null);
+    }
+  };
 
-    candidatesData.forEach((res: any) => {
-      const val = res.result || res;
-      if (!val || !val.exists) return;
+  // ── Publish election on-chain ──────────────────────────────────────────────
+  const handlePublishElection = async () => {
+    setPublishingElection(true);
+    try {
+      const res = await electionsApi.publishElectionOnChain(electionDbId);
+      showToast(
+        `Election published on-chain! On-chain ID: ${res.onChainElectionId}`,
+        "success",
+        `Tx: ${res.txHash}`
+      );
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to publish election on-chain", "error");
+    } finally {
+      setPublishingElection(false);
+    }
+  };
 
-      const candidate: Candidate = {
-        id: val.id,
-        electionId: val.electionId,
-        name: val.name,
-        description: val.description,
-        imageUrl: val.imageUrl,
-        walletAddress: val.walletAddress,
-        voteCount: val.voteCount,
-        approved: val.approved,
-        exists: val.exists,
-      };
+  // ── Publish approved candidate on-chain ────────────────────────────────────
+  const handlePublishCandidate = async (candidateId: string) => {
+    setPublishingCandId(candidateId);
+    try {
+      const res = await electionsApi.publishCandidateOnChain(electionDbId, candidateId);
+      showToast(
+        `Candidate published on-chain at index ${res.onChainCandidateIndex}.`,
+        "success",
+        `Tx: ${res.txHash}`
+      );
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to publish candidate on-chain", "error");
+    } finally {
+      setPublishingCandId(null);
+    }
+  };
 
-      if (candidate.approved) {
-        approved.push(candidate);
-      } else {
-        pending.push(candidate);
-      }
-    });
+  // ── Compute eligible voters ────────────────────────────────────────────────
+  const handleComputeVoters = async () => {
+    setComputingVoters(true);
+    try {
+      const res = await electionsApi.computeEligibleVoters(electionDbId);
+      showToast(`Voter list computed — ${res.eligibleCount} eligible voters.`, "success");
+      await loadData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to compute voters", "error");
+    } finally {
+      setComputingVoters(false);
+    }
+  };
 
-    return { pendingCandidates: pending, approvedCandidates: approved };
-  }, [candidatesData]);
+  // ── Derived ────────────────────────────────────────────────────────────────
+  if (!isAuthenticated || !isAdmin()) {
+    return (
+      <div className="container">
+        <div className={styles.denied}>
+          <h1>Admin access required</h1>
+          <p>
+            {!isAuthenticated
+              ? "Sign in with your INSA account to manage elections."
+              : "Your account does not have administrator privileges."}
+          </p>
+          <Link href="/" className="btn btn-outline btn-sm">Home</Link>
+        </div>
+      </div>
+    );
+  }
 
-  if (isElectionLoading || !electionRaw) {
+  if (isLoading || !election) {
     return (
       <div className={styles.loaderContainer}>
         <div className="spinner" />
@@ -159,334 +189,276 @@ export default function AdminElectionPage() {
     );
   }
 
-  const election = electionRaw as unknown as Election;
-  const status = (statusRaw || "Ended") as string;
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG["Ended"];
-  const isEnded = status === "Ended";
+  const pendingCandidates  = candidates.filter((c) => c.status === CandidateStatus.PENDING);
+  const approvedCandidates = candidates.filter((c) => c.status === CandidateStatus.APPROVED);
+  const rejectedCandidates = candidates.filter((c) => c.status === CandidateStatus.REJECTED);
 
-  // Action Handlers
-  const handleAddCandidate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!candName.trim() || !candWallet.trim()) {
-      showToast("Name and Wallet Address are required", "error");
-      return;
-    }
-
-    addCandidate(
-      {
-        address: contractAddress,
-        abi: VOTING_PLATFORM_ABI,
-        functionName: "addCandidate",
-        args: [
-          electionId,
-          candName,
-          candDesc,
-          candImg,
-          candWallet as `0x${string}`,
-        ],
-      },
-      {
-        onSuccess: () => {
-          showToast("Approved candidate added successfully!", "success");
-          setCandName("");
-          setCandDesc("");
-          setCandImg("");
-          setCandWallet("");
-          // Refetch state
-          refetchIds();
-          refetchCandidates();
-          refetchElection();
-        },
-        onError: (err: any) => {
-          console.error(err);
-          const msg =
-            err.shortMessage || err.message || "Failed to add candidate";
-          showToast(msg, "error");
-        },
-      },
-    );
-  };
-
-  const handleApprove = (candidateId: bigint) => {
-    approveCandidate(
-      {
-        address: contractAddress,
-        abi: VOTING_PLATFORM_ABI,
-        functionName: "approveCandidate",
-        args: [electionId, candidateId],
-      },
-      {
-        onSuccess: () => {
-          showToast("Candidate approved successfully!", "success");
-          refetchCandidates();
-        },
-        onError: (err: any) => {
-          console.error(err);
-          const msg =
-            err.shortMessage || err.message || "Failed to approve candidate";
-          showToast(msg, "error");
-        },
-      },
-    );
-  };
-
-  const handleReject = (candidateId: bigint) => {
-    rejectCandidate(
-      {
-        address: contractAddress,
-        abi: VOTING_PLATFORM_ABI,
-        functionName: "rejectCandidate",
-        args: [electionId, candidateId],
-      },
-      {
-        onSuccess: () => {
-          showToast("Candidate rejected/removed successfully!", "success");
-          refetchIds();
-          refetchCandidates();
-        },
-        onError: (err: any) => {
-          console.error(err);
-          const msg =
-            err.shortMessage || err.message || "Failed to reject candidate";
-          showToast(msg, "error");
-        },
-      },
-    );
-  };
-
-  const isLoading = isRoleLoading || isIdsLoading || isCandidatesLoading;
-
-  // Access Control: Block if not admin
-  if (!isConnected || !isAdmin) {
-    return (
-      <div className="container">
-        <div className={styles.denied}>
-          <h1>Admin access required</h1>
-          <p>
-            {!isConnected
-              ? "Connect a wallet in the header to check whether you can administer elections."
-              : "This wallet is not an administrator."}
-          </p>
-          <Link href="/" className="btn btn-outline btn-sm">
-            Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const status   = election.status;
+  const cfg      = { label: STATUS_LABEL[status], cls: STATUS_CLS[status] };
+  const isEnded  = status === ElectionStatus.ENDED;
+  const isOnChain = !!election.onChainElectionId;
 
   return (
     <div className={`container ${styles.page}`}>
-      <Link href="/admin" className={styles.backLink}>
-        Admin
-      </Link>
+      <Link href="/admin" className={styles.backLink}>Admin</Link>
 
+      {/* Header */}
       <header className={`panel panel-pad ${styles.header}`}>
         <div className={styles.headerContent}>
           <h1 className={styles.title}>{election.title}</h1>
           {election.description && <p className={styles.desc}>{election.description}</p>}
         </div>
         <p className={styles.metaLine}>
-          <span className={cfg.cls}>{cfg.label}</span>
-          <span>
-            {Number(election.totalVotes).toLocaleString()}{" "}
-            {Number(election.totalVotes) === 1 ? "vote" : "votes"}
+          <span className={`status ${cfg.cls}`}>{cfg.label}</span>
+          <span style={{ opacity: 0.6, fontSize: "0.85rem" }}>
+            {new Date(election.startDate).toLocaleDateString()} –{" "}
+            {new Date(election.endDate).toLocaleDateString()}
           </span>
         </p>
       </header>
 
+      {/* On-chain action strip */}
+      <div className={`panel panel-pad ${styles.actionsStrip}`}>
+        <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Blockchain actions</h2>
+        <div className={styles.actionBtns}>
+
+          {/* 1. Compute voters */}
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={handleComputeVoters}
+            disabled={computingVoters}
+            title="Evaluate eligibility rules and build the voter list"
+          >
+            {computingVoters ? <RefreshCw size={14} className={styles.spin} /> : <Users size={14} />}
+            {computingVoters ? "Computing…" : election.votersComputed ? "Recompute voters" : "Compute voters"}
+          </button>
+
+          {/* 2. Publish election on-chain */}
+          <button
+            className={`btn btn-sm ${isOnChain ? "btn-outline" : "btn-primary"}`}
+            onClick={handlePublishElection}
+            disabled={publishingElection || isOnChain}
+            title={
+              isOnChain
+                ? `Already on-chain (ID: ${election.onChainElectionId})`
+                : "Write this election to the Besu blockchain via the server relay wallet"
+            }
+          >
+            {publishingElection ? <RefreshCw size={14} className={styles.spin} /> : <UploadCloud size={14} />}
+            {publishingElection
+              ? "Publishing…"
+              : isOnChain
+              ? `✓ On-chain #${election.onChainElectionId}`
+              : "Publish election on-chain"}
+          </button>
+        </div>
+
+        {isOnChain && (
+          <p style={{ margin: "0.5rem 0 0", opacity: 0.55, fontSize: "0.78rem" }}>
+            On-chain election ID: <code>{election.onChainElectionId}</code>. Publish approved candidates below.
+          </p>
+        )}
+      </div>
+
       <div className={styles.layout}>
+        {/* Left col: Pending + Approved candidates */}
         <div className={styles.leftCol}>
+
+          {/* Pending reviews */}
           <div className="panel panel-pad">
             <h2 className={styles.sectionTitle}>
-              Pending ({pendingCandidates.length})
+              Pending review ({pendingCandidates.length})
             </h2>
 
-            {isLoading ? (
-              <div className="spinner" />
-            ) : pendingCandidates.length === 0 ? (
+            {pendingCandidates.length === 0 ? (
               <p className={styles.emptyState}>No registrations waiting for review.</p>
             ) : (
               <div className={styles.list}>
-                {pendingCandidates.map((cand) => (
-                  <div key={cand.id.toString()} className={styles.item}>
-                    <div className={styles.itemInfo}>
-                      <h4 className={styles.itemName}>{cand.name}</h4>
-                      {cand.description && (
-                        <p className={styles.itemDesc}>{cand.description}</p>
-                      )}
-                      <span className={styles.itemAddress}>
-                        {cand.walletAddress}
-                      </span>
+                {pendingCandidates.map((cand) => {
+                  const name = cand.employee
+                    ? `${cand.employee.firstName} ${cand.employee.lastName}`
+                    : "Unknown";
+                  return (
+                    <div key={cand.id} className={styles.item}>
+                      <div className={styles.itemInfo}>
+                        <h4 className={styles.itemName}>{name}</h4>
+                        {cand.statement && <p className={styles.itemDesc}>{cand.statement}</p>}
+                        {cand.slogan && <em className={styles.itemAddress}>&ldquo;{cand.slogan}&rdquo;</em>}
+                      </div>
+                      <div className={styles.itemActions}>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleReview(cand.id, CandidateStatus.APPROVED)}
+                          disabled={!!reviewingId || isEnded}
+                          title={isEnded ? "Election has ended" : "Approve candidate"}
+                        >
+                          {reviewingId === cand.id ? <RefreshCw size={13} className={styles.spin} /> : <Check size={14} />}
+                          Approve
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleReview(cand.id, CandidateStatus.REJECTED)}
+                          disabled={!!reviewingId}
+                          title="Reject candidate"
+                        >
+                          <X size={14} />
+                          Reject
+                        </button>
+                      </div>
                     </div>
-                    <div className={styles.itemActions}>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleApprove(cand.id)}
-                        disabled={isApprovePending || isEnded}
-                        title={
-                          isEnded ? "Election has ended" : "Approve candidate"
-                        }
-                      >
-                        <Check size={14} />
-                        Approve
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleReject(cand.id)}
-                        disabled={isRejectPending}
-                        title="Reject candidate"
-                      >
-                        <X size={14} />
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
+          {/* Approved candidates + publish buttons */}
           <div className="panel panel-pad">
             <h2 className={styles.sectionTitle}>
               On the ballot ({approvedCandidates.length})
             </h2>
 
-            {isLoading ? (
-              <div className="spinner" />
-            ) : approvedCandidates.length === 0 ? (
+            {approvedCandidates.length === 0 ? (
               <p className={styles.emptyState}>
-                No approved candidates. Add one on the right, or approve a pending registration.
+                No approved candidates. Approve a pending registration above.
               </p>
             ) : (
               <div className={styles.list}>
-                {approvedCandidates.map((cand) => (
-                  <div key={cand.id.toString()} className={styles.item}>
-                    <div className={styles.itemInfo}>
-                      <h4 className={styles.itemName}>{cand.name}</h4>
-                      {cand.description && (
-                        <p className={styles.itemDesc}>{cand.description}</p>
-                      )}
-                      <span className={styles.itemAddress}>
-                        {cand.walletAddress}
-                      </span>
+                {approvedCandidates.map((cand) => {
+                  const name = cand.employee
+                    ? `${cand.employee.firstName} ${cand.employee.lastName}`
+                    : "Unknown";
+                  const isPublished = cand.onChainCandidateIndex !== null;
+                  return (
+                    <div key={cand.id} className={styles.item}>
+                      <div className={styles.itemInfo}>
+                        <h4 className={styles.itemName}>{name}</h4>
+                        {cand.statement && <p className={styles.itemDesc}>{cand.statement}</p>}
+                        {isPublished && (
+                          <span style={{ fontSize: "0.75rem", color: "var(--color-success)", fontWeight: 600 }}>
+                            ✓ On-chain (index {cand.onChainCandidateIndex})
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.itemActions}>
+                        {/* Publish on-chain button — only available when election is on-chain */}
+                        {isOnChain && !isPublished && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handlePublishCandidate(cand.id)}
+                            disabled={publishingCandId === cand.id}
+                            title="Publish this candidate to the blockchain"
+                          >
+                            {publishingCandId === cand.id
+                              ? <RefreshCw size={13} className={styles.spin} />
+                              : <Link2 size={13} />}
+                            {publishingCandId === cand.id ? "Publishing…" : "Publish on-chain"}
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleReview(cand.id, CandidateStatus.REJECTED)}
+                          disabled={!!reviewingId}
+                          title="Remove from ballot"
+                        >
+                          <X size={14} />
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                    <div className={styles.itemActions}>
-                      <span className={styles.itemVotes}>
-                        {Number(cand.voteCount).toLocaleString()} votes
-                      </span>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleReject(cand.id)}
-                        disabled={isRejectPending}
-                        title="Remove candidate"
-                      >
-                        <X size={14} />
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
-        </div>
 
-        <div className={styles.rightCol}>
-          {isEnded ? (
-            <p className={styles.endedNote}>
-              This election is closed. Candidates can no longer be added or approved.
-            </p>
-          ) : (
-            <div className={`panel panel-pad ${styles.formBlock}`}>
-              <h3 className={styles.formTitle}>Add a candidate</h3>
-              <p className={styles.formLead}>
-                Adds them to the ballot immediately, without a pending review.
-              </p>
-
-              <form onSubmit={handleAddCandidate} className={styles.form}>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="add-name">Full name</label>
-                  <input
-                    id="add-name"
-                    type="text"
-                    className="form-input"
-                    placeholder="Name"
-                    value={candName}
-                    onChange={(e) => setCandName(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="add-wallet">Wallet address</label>
-                  <input
-                    id="add-wallet"
-                    type="text"
-                    className="form-input"
-                    placeholder="0x…"
-                    value={candWallet}
-                    onChange={(e) => setCandWallet(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="add-desc">Description</label>
-                  <textarea
-                    id="add-desc"
-                    className="form-input"
-                    placeholder="Short bio"
-                    value={candDesc}
-                    onChange={(e) => setCandDesc(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="add-img">Photo URL (optional)</label>
-                  <input
-                    id="add-img"
-                    type="url"
-                    className="form-input"
-                    placeholder="https://"
-                    value={candImg}
-                    onChange={(e) => setCandImg(e.target.value)}
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={isAddPending}
-                >
-                  {isAddPending ? "Adding…" : "Add candidate"}
-                </button>
-              </form>
+          {/* Rejected candidates (collapsed) */}
+          {rejectedCandidates.length > 0 && (
+            <div className="panel panel-pad">
+              <h2 className={styles.sectionTitle} style={{ opacity: 0.5 }}>
+                Rejected ({rejectedCandidates.length})
+              </h2>
+              <div className={styles.list}>
+                {rejectedCandidates.map((cand) => {
+                  const name = cand.employee
+                    ? `${cand.employee.firstName} ${cand.employee.lastName}`
+                    : "Unknown";
+                  return (
+                    <div key={cand.id} className={styles.item} style={{ opacity: 0.55 }}>
+                      <div className={styles.itemInfo}>
+                        <h4 className={styles.itemName}>{name}</h4>
+                        {cand.rejectionReason && <p className={styles.itemDesc}>{cand.rejectionReason}</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
+
+        {/* Right col: Election info / quick stats */}
+        <div className={styles.rightCol}>
+          <div className={`panel panel-pad ${styles.formBlock}`}>
+            <h3 className={styles.formTitle}>Election info</h3>
+
+            <dl style={{ display: "grid", gap: "0.75rem" }}>
+              <div>
+                <dt style={{ fontSize: "0.78rem", opacity: 0.55, marginBottom: "0.2rem" }}>Type</dt>
+                <dd style={{ fontWeight: 600 }}>{election.electionType.replace("_", " ")}</dd>
+              </div>
+              <div>
+                <dt style={{ fontSize: "0.78rem", opacity: 0.55, marginBottom: "0.2rem" }}>Registration deadline</dt>
+                <dd>{election.registrationDeadline
+                  ? new Date(election.registrationDeadline).toLocaleString()
+                  : "—"}</dd>
+              </div>
+              <div>
+                <dt style={{ fontSize: "0.78rem", opacity: 0.55, marginBottom: "0.2rem" }}>Voting opens</dt>
+                <dd>{new Date(election.startDate).toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt style={{ fontSize: "0.78rem", opacity: 0.55, marginBottom: "0.2rem" }}>Voting closes</dt>
+                <dd>{new Date(election.endDate).toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt style={{ fontSize: "0.78rem", opacity: 0.55, marginBottom: "0.2rem" }}>Max candidates</dt>
+                <dd>{election.maxCandidates}</dd>
+              </div>
+              <div>
+                <dt style={{ fontSize: "0.78rem", opacity: 0.55, marginBottom: "0.2rem" }}>Voters computed</dt>
+                <dd>{election.votersComputed ? "✓ Yes" : "Not yet"}</dd>
+              </div>
+            </dl>
+
+            <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <Link
+                href={`/elections/${election.id}`}
+                className="btn btn-outline btn-sm"
+                target="_blank"
+              >
+                View public page
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ─── Toast Container ────────────────────────────────────────────── */}
+      {/* Toast */}
       {toast.show && (
         <div className="toast-container">
           <div className={`toast animate-fade-in toast-${toast.type}`}>
-            {toast.type === "success" && (
-              <CheckCircle
-                size={18}
-                style={{ color: "var(--color-success)" }}
-              />
-            )}
-            {toast.type === "error" && (
-              <AlertTriangle
-                size={18}
-                style={{ color: "var(--color-danger)" }}
-              />
-            )}
-            {toast.type === "info" && (
-              <Info size={18} style={{ color: "var(--color-accent)" }} />
-            )}
-            <span>{toast.message}</span>
+            {toast.type === "success" && <CheckCircle size={18} style={{ color: "var(--color-success)" }} />}
+            {toast.type === "error"   && <AlertTriangle size={18} style={{ color: "var(--color-danger)" }} />}
+            {toast.type === "info"    && <Info size={18} style={{ color: "var(--color-accent)" }} />}
+            <div>
+              <span>{toast.message}</span>
+              {toast.detail && (
+                <div style={{ fontSize: "0.75rem", opacity: 0.65, marginTop: "0.2rem" }}>
+                  {toast.detail}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

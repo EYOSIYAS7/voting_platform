@@ -63,22 +63,11 @@ declare const VOTING_ABI: readonly [{
     }, {
         readonly type: "uint256";
         readonly name: "candidateId";
+    }, {
+        readonly type: "bytes32";
+        readonly name: "voterRef";
     }];
     readonly outputs: readonly [];
-}, {
-    readonly name: "hasVoted";
-    readonly type: "function";
-    readonly stateMutability: "view";
-    readonly inputs: readonly [{
-        readonly type: "uint256";
-        readonly name: "electionId";
-    }, {
-        readonly type: "address";
-        readonly name: "voter";
-    }];
-    readonly outputs: readonly [{
-        readonly type: "bool";
-    }];
 }, {
     readonly name: "getResults";
     readonly type: "function";
@@ -191,8 +180,8 @@ declare const VOTING_ABI: readonly [{
         readonly name: "candidateId";
         readonly indexed: true;
     }, {
-        readonly type: "address";
-        readonly name: "voter";
+        readonly type: "bytes32";
+        readonly name: "voterRef";
         readonly indexed: true;
     }];
 }, {
@@ -263,8 +252,8 @@ export declare class BlockchainService implements OnModuleInit {
     castVoteOnChain(params: {
         onChainElectionId: bigint;
         onChainCandidateId: bigint;
+        voterRef: `0x${string}`;
     }): Promise<`0x${string}`>;
-    hasVotedOnChain(onChainElectionId: bigint, voterAddress: Address): Promise<boolean>;
     getResultsOnChain(onChainElectionId: bigint): Promise<readonly {
         id: bigint;
         electionId: bigint;

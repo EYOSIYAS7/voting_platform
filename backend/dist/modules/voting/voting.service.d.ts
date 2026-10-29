@@ -2,18 +2,16 @@ import { Repository, DataSource } from 'typeorm';
 import { Election, ElectionStatus } from '../election/entities/election.entity.js';
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
 import { Candidate } from '../candidate/entities/candidate.entity.js';
-import { WalletBinding } from '../auth/entities/wallet-binding.entity.js';
 import { BlockchainService } from './blockchain.service.js';
 import { CastVoteDto, PublishElectionDto } from './dto/voting.dto.js';
 export declare class VotingService {
     private readonly electionRepo;
     private readonly voterRepo;
     private readonly candidateRepo;
-    private readonly walletRepo;
     private readonly blockchain;
     private readonly dataSource;
     private readonly logger;
-    constructor(electionRepo: Repository<Election>, voterRepo: Repository<ElectionVoter>, candidateRepo: Repository<Candidate>, walletRepo: Repository<WalletBinding>, blockchain: BlockchainService, dataSource: DataSource);
+    constructor(electionRepo: Repository<Election>, voterRepo: Repository<ElectionVoter>, candidateRepo: Repository<Candidate>, blockchain: BlockchainService, dataSource: DataSource);
     publishElectionOnChain(electionId: string, dto: PublishElectionDto): Promise<{
         election: Election;
         onChainElectionId: string;
