@@ -73,6 +73,13 @@ export class ElectionController {
     return this.service.getMyElections(user.employeeId);
   }
 
+  @Get('created-by-me')
+  @ApiOperation({ summary: 'Get all elections created by the authenticated employee' })
+  getMyCreatedElections(@Req() req: Request) {
+    const user = req.user as AuthenticatedUser;
+    return this.service.getElectionsCreatedByMe(user.employeeId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single election with its eligibility rules' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {

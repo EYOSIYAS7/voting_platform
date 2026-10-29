@@ -227,6 +227,12 @@ let ElectionService = class ElectionService {
             voterRow,
         };
     }
+    async getElectionsCreatedByMe(employeeId) {
+        return this.electionRepo.find({
+            where: { createdByEmployeeId: employeeId },
+            order: { createdAt: 'DESC' },
+        });
+    }
     async getMyElections(employeeId) {
         const voterRows = await this.voterRepo.find({
             where: { employeeId, isEligible: true },

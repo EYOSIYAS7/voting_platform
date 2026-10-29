@@ -32,6 +32,11 @@ export const electionsApi = {
     return api.get<Election[]>('/elections/mine');
   },
 
+  /** Get elections created by the authenticated employee (for election management) */
+  getMyCreatedElections(): Promise<Election[]> {
+    return api.get<Election[]>('/elections/created-by-me');
+  },
+
   /** Get election by ID including rules */
   getElection(id: string): Promise<Election> {
     return api.get<Election>(`/elections/${id}`);

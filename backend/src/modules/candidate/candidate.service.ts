@@ -12,6 +12,7 @@ import { Candidate, CandidateStatus } from './entities/candidate.entity.js';
 import { Election, ElectionStatus } from '../election/entities/election.entity.js';
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
 import { Employee } from '../employee/employee.entity.js';
+import { Position } from '../position/position.entity.js';
 
 import {
   NominateCandidateDto,
@@ -34,6 +35,9 @@ export class CandidateService {
 
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
+
+    @InjectRepository(Position)
+    private readonly positionRepo: Repository<Position>,
 
     private readonly dataSource: DataSource,
   ) {}
@@ -101,6 +105,56 @@ export class CandidateService {
     }
   }
 
+  /**
+   * Enforces the hierarchy rule: candidates must be at a lower organizational
+   * level than the election creator (higher level number = lower in the org chart,
+   * since level 1 = General Director, level 99 = junior staff).
+   *
+   * The election creator cannot nominate someone who outranks them (same or
+   * lower level number). If either party has no position assigned, the check
+   * is skipped (no restriction applied).
+   */
+  private async assertCandidateLevelAllowed(
+    election: Election,
+    candidateEmployeeId: string,
+  ): Promise<void> {
+    // No creator recorded → no restriction
+    if (!election.createdByEmployeeId) return;
+
+    // Fetch creator's position level
+    const creator = await this.employeeRepo.findOne({
+      where: { id: election.createdByEmployeeId },
+    });
+    if (!creator?.positionId) return; // creator has no position → no restriction
+
+    const creatorPosition = await this.positionRepo.findOne({
+      where: { id: creator.positionId },
+    });
+    if (!creatorPosition) return;
+
+    // Fetch candidate's position level
+    const candidate = await this.employeeRepo.findOne({
+      where: { id: candidateEmployeeId },
+    });
+    if (!candidate?.positionId) return; // candidate has no position → allow (edge case)
+
+    const candidatePosition = await this.positionRepo.findOne({
+      where: { id: candidate.positionId },
+    });
+    if (!candidatePosition) return;
+
+    // Block if the candidate is at the same rank or outranks the creator
+    // (lower level number = higher in the org — level 1 > level 5)
+    if (candidatePosition.level <= creatorPosition.level) {
+      throw new ForbiddenException(
+        `Cannot nominate ${candidate.firstName} ${candidate.lastName} — ` +
+        `their position level (${candidatePosition.level}: ${candidatePosition.name}) ` +
+        `is the same as or higher than the election creator's position level ` +
+        `(${creatorPosition.level}: ${creatorPosition.name}).`,
+      );
+    }
+  }
+
   /* ─────────────────── NOMINATIONS ──────────────────────── */
 
   /**
@@ -116,6 +170,7 @@ export class CandidateService {
 
     await this.requireEmployee(dto.employeeId);
     await this.assertEmployeeEligible(election, dto.employeeId);
+    await this.assertCandidateLevelAllowed(election, dto.employeeId);
 
     const existing = await this.candidateRepo.findOne({
       where: { electionId, employeeId: dto.employeeId },
@@ -152,6 +207,7 @@ export class CandidateService {
     this.assertNominationOpen(election);
 
     await this.assertEmployeeEligible(election, employeeId);
+    await this.assertCandidateLevelAllowed(election, employeeId);
 
     const existing = await this.candidateRepo.findOne({
       where: { electionId, employeeId },

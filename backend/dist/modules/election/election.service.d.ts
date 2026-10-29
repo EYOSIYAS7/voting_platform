@@ -37,5 +37,6 @@ export declare class ElectionService {
         hasVoted: boolean;
         voterRow: ElectionVoter | null;
     }>;
+    getElectionsCreatedByMe(employeeId: string): Promise<Election[]>;
     getMyElections(employeeId: string): Promise<Election[]>;
 }

@@ -317,6 +317,17 @@ export class ElectionService {
   }
 
   /**
+   * Returns all elections created by the given employee.
+   * Used by election creators to manage their own elections.
+   */
+  async getElectionsCreatedByMe(employeeId: string): Promise<Election[]> {
+    return this.electionRepo.find({
+      where: { createdByEmployeeId: employeeId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
    * Returns all elections the given employee is eligible for.
    * Only returns elections where voters have been computed.
    */
