@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { LoginModal } from "@/components/LoginModal";
 import styles from "./landing.module.css";
 
 const FEATURES = [
@@ -89,21 +92,33 @@ const STEPS = [
   },
   {
     num: "02",
-    label: "Sign with Bound Web3 Wallet",
-    desc: "Connect your MetaMask or institutional wallet verified through cryptographic SIWE challenge-response.",
+    label: "Organizational Eligibility Verification",
+    desc: "Your directorate, position rank, and tenure automatically determine which elections you are eligible to participate in.",
   },
   {
     num: "03",
     label: "Cast Immutable On-Chain Vote",
-    desc: "Submit an EVM-signed transaction to the Hyperledger Besu smart contract. Your ballot is sealed forever.",
+    desc: "Submit an EVM-signed transaction to the Hyperledger Besu smart contract via the secure server relay. Your ballot is sealed forever.",
   },
 ];
 
 export default function LandingPage() {
+  const router = useRouter();
+  const { isAuthenticated, logout } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleStartVoting = () => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    } else {
+      setLoginModalOpen(true);
+    }
+  };
 
   return (
     <div className={styles.root}>
@@ -133,15 +148,44 @@ export default function LandingPage() {
           INSA E-Voting
         </span>
         <nav className={styles.topNav} aria-label="Quick access">
-          <Link href="/dashboard" className={styles.topLink}>
-            Dashboard
-          </Link>
-          <Link href="/admin" className={styles.topLink}>
-            Admin
-          </Link>
-          <Link href="/elections" className={styles.topLink}>
-            Elections
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link href="/dashboard" className={styles.topLink}>
+                Dashboard
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                className={styles.topLink}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  font: "inherit",
+                }}
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setLoginModalOpen(true)}
+              className={styles.topLink}
+              style={{
+                background: "var(--color-accent)",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: "4px",
+                padding: "0.35rem 0.85rem",
+                cursor: "pointer",
+                font: "inherit",
+                fontWeight: 600,
+              }}
+            >
+              Sign In
+            </button>
+          )}
         </nav>
       </header>
 
@@ -168,12 +212,14 @@ export default function LandingPage() {
               </p>
 
               <div className={styles.heroCtas}>
-                <Link
-                  href="/dashboard"
-                  id="cta-dashboard"
+                <button
+                  type="button"
+                  id="cta-start-voting"
                   className={styles.ctaPrimary}
+                  onClick={handleStartVoting}
+                  style={{ border: "none", cursor: "pointer" }}
                 >
-                  Go to Dashboard
+                  Start Voting
                   <svg
                     width="16"
                     height="16"
@@ -187,14 +233,7 @@ export default function LandingPage() {
                   >
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
-                </Link>
-                <Link
-                  href="/admin"
-                  id="cta-admin"
-                  className={styles.ctaSecondary}
-                >
-                  Admin Panel
-                </Link>
+                </button>
               </div>
 
               <div
@@ -316,7 +355,7 @@ export default function LandingPage() {
           <div className={styles.howInner}>
             <div className={styles.howText}>
               <h2 id="how-heading">
-                From wallet to
+                From identity to
                 <br />
                 verified ballot
               </h2>
@@ -325,10 +364,16 @@ export default function LandingPage() {
                 protected through role-based organizational scoping and
                 cryptographically signed transactions.
               </p>
-              <Link
-                href="/dashboard"
+              <button
+                type="button"
                 className={styles.ctaPrimary}
-                style={{ marginTop: "1.75rem", display: "inline-flex" }}
+                onClick={handleStartVoting}
+                style={{
+                  marginTop: "1.75rem",
+                  display: "inline-flex",
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
                 Start voting
                 <svg
@@ -344,7 +389,7 @@ export default function LandingPage() {
                 >
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-              </Link>
+              </button>
             </div>
             <ol className={styles.stepsList} aria-label="How voting works">
               {STEPS.map((s) => (
@@ -362,13 +407,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Dual CTA with image backdrops ── */}
-        <section className={styles.dualCta} aria-labelledby="dual-cta-heading">
-          <h2 id="dual-cta-heading" className="sr-only">
-            Choose your role
+        {/* ── Voter Portal CTA ── */}
+        <section className={styles.dualCta} aria-labelledby="cta-heading">
+          <h2 id="cta-heading" className="sr-only">
+            Voter Portal
           </h2>
-          <div className={styles.dualGrid}>
-            {/* Voter Portal Card (with voting2.jpg ambient backdrop) */}
+          <div className={styles.dualGrid} style={{ gridTemplateColumns: "1fr", maxWidth: 680, margin: "0 auto" }}>
             <div className={styles.dualCard} id="voter-portal">
               <div
                 className={styles.dualCardBackdrop}
@@ -399,10 +443,12 @@ export default function LandingPage() {
                   your signed on-chain ballot. Your vote is permanent,
                   tamper-evident, and publicly verifiable.
                 </p>
-                <Link
-                  href="/dashboard"
+                <button
+                  type="button"
                   id="link-voter-dashboard"
+                  onClick={handleStartVoting}
                   className={styles.dualLink}
+                  style={{ border: "none", cursor: "pointer", background: "none", font: "inherit", textAlign: "left", padding: 0 }}
                 >
                   Enter Dashboard
                   <svg
@@ -418,62 +464,7 @@ export default function LandingPage() {
                   >
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
-                </Link>
-              </div>
-            </div>
-
-            {/* Admin Console Card (with voting.png ambient backdrop) */}
-            <div
-              className={`${styles.dualCard} ${styles.dualCardAccent}`}
-              id="admin-portal"
-            >
-              <div
-                className={styles.dualCardBackdrop}
-                style={{ backgroundImage: "url('/voting.png')" }}
-                aria-hidden="true"
-              />
-              <div className={styles.dualCardContent}>
-                <div className={styles.dualCardIcon} aria-hidden="true">
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
-                  </svg>
-                </div>
-                <h3>Admin Console</h3>
-                <p>
-                  Provision elections, configure organizational eligibility,
-                  approve candidates, and monitor blockchain consensus in real
-                  time with complete cryptographic auditing.
-                </p>
-                <Link
-                  href="/admin"
-                  id="link-admin-panel"
-                  className={`${styles.dualLink} ${styles.dualLinkAccent}`}
-                >
-                  Open Admin Console
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -488,6 +479,13 @@ export default function LandingPage() {
         </span>
         <span>Hyperledger Besu Enterprise · {new Date().getFullYear()}</span>
       </footer>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onSuccess={() => router.push("/dashboard")}
+      />
     </div>
   );
 }

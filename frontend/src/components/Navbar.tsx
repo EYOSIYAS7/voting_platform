@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/lib/context/ThemeContext';
 import { useAuthStore } from '@/lib/store/useAuthStore';
+import { SystemRole } from '@/lib/types/api';
 import { LoginModal } from './LoginModal';
 import {
   LogIn,
   LogOut,
+  ExternalLink,
 } from 'lucide-react';
 import styles from './Navbar.module.css';
 
@@ -17,18 +19,23 @@ export function Navbar() {
   const { theme, toggleTheme } = useTheme();
 
   // Auth store
-  const { isAuthenticated, employee, user, isAdmin, logout } = useAuthStore();
+  const { isAuthenticated, employee, user, hasRole, logout } = useAuthStore();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
-  const hasAdminAccess = isAdmin();
+  const canManageElections =
+    hasRole(SystemRole.ELECTION_ADMIN) || hasRole(SystemRole.SYSTEM_ADMIN);
+  const isSysAdmin = hasRole(SystemRole.SYSTEM_ADMIN);
 
   const links = [
     { href: '/dashboard', label: 'Overview', exact: true },
     { href: '/elections', label: 'Elections', exact: false },
-    ...(hasAdminAccess
-      ? [{ href: '/admin', label: 'Admin Command', exact: false, isAdmin: true }]
+    ...(canManageElections
+      ? [
+          { href: '/create-election', label: 'Create Election', exact: false },
+          { href: '/my-elections', label: 'Managed Elections', exact: false },
+        ]
       : []),
   ];
 
@@ -86,7 +93,7 @@ export function Navbar() {
                 </span>
                 <span
                   className={`${styles.userRole} ${
-                    hasAdminAccess ? styles.userRoleAdmin : ''
+                    isSysAdmin ? styles.userRoleAdmin : ''
                   }`}
                 >
                   {userRoleLabel}
@@ -96,7 +103,7 @@ export function Navbar() {
           ) : null}
 
           <nav className={styles.links}>
-            {links.map(({ href, label, exact, isAdmin: linkIsAdmin }) => (
+            {links.map(({ href, label, exact }) => (
               <Link
                 key={href}
                 href={href}
@@ -106,12 +113,33 @@ export function Navbar() {
                 onClick={closeMenu}
               >
                 <span>{label}</span>
-                {linkIsAdmin && <span className={styles.adminTag}>Admin</span>}
               </Link>
             ))}
           </nav>
 
           <div className={styles.sidebarFooter}>
+            {isAuthenticated && isSysAdmin && (
+              <Link
+                href="/admin/dashboard"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.45rem 0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: '#D92828',
+                  background: 'rgba(217, 40, 40, 0.08)',
+                  border: '1px solid rgba(217, 40, 40, 0.25)',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                }}
+              >
+                <span>Admin Console</span>
+                <ExternalLink size={13} />
+              </Link>
+            )}
+
             <button
               id="theme-toggle"
               className={styles.themeToggle}
