@@ -12,30 +12,31 @@ import {
   CandidateStatus,
   EligibilityCheckResponse,
   VotingResultsResponse,
+  VoteProofResponse,
   SelfNominateDto,
 } from '@/lib/types/api';
 import { CandidateCard } from '@/components/CandidateCard';
 import { ResultsChart } from '@/components/ResultsChart';
 import { CountdownTimer } from '@/components/CountdownTimer';
-import { CheckCircle, AlertTriangle, Info, ExternalLink } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Info, ExternalLink, Copy, Check } from 'lucide-react';
 import styles from './election-detail.module.css';
 
 const STATUS_LABEL: Record<ElectionStatus, string> = {
-  [ElectionStatus.DRAFT]:        'Draft',
+  [ElectionStatus.DRAFT]: 'Draft',
   [ElectionStatus.REGISTRATION]: 'Registration open',
-  [ElectionStatus.UPCOMING]:     'Voting soon',
-  [ElectionStatus.ACTIVE]:       'Voting open',
-  [ElectionStatus.ENDED]:        'Closed',
-  [ElectionStatus.CANCELLED]:    'Cancelled',
+  [ElectionStatus.UPCOMING]: 'Voting soon',
+  [ElectionStatus.ACTIVE]: 'Voting open',
+  [ElectionStatus.ENDED]: 'Closed',
+  [ElectionStatus.CANCELLED]: 'Cancelled',
 };
 
 const STATUS_CLS: Record<ElectionStatus, string> = {
-  [ElectionStatus.DRAFT]:        'status-pending',
+  [ElectionStatus.DRAFT]: 'status-pending',
   [ElectionStatus.REGISTRATION]: 'status-registration',
-  [ElectionStatus.UPCOMING]:     'status-upcoming',
-  [ElectionStatus.ACTIVE]:       'status-active',
-  [ElectionStatus.ENDED]:        'status-ended',
-  [ElectionStatus.CANCELLED]:    'status-ended',
+  [ElectionStatus.UPCOMING]: 'status-upcoming',
+  [ElectionStatus.ACTIVE]: 'status-active',
+  [ElectionStatus.ENDED]: 'status-ended',
+  [ElectionStatus.CANCELLED]: 'status-ended',
 };
 
 export default function ElectionDetailPage() {
@@ -48,7 +49,10 @@ export default function ElectionDetailPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [eligibility, setEligibility] = useState<EligibilityCheckResponse | null>(null);
   const [results, setResults] = useState<VotingResultsResponse | null>(null);
+  const [voteProof, setVoteProof] = useState<VoteProofResponse | null>(null);
+  const [votedForCandidateId, setVotedForCandidateId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [copiedTx, setCopiedTx] = useState(false);
 
   // ── Nomination form state ───────────────────────────────────────────────────
   const [statement, setStatement] = useState('');
@@ -89,10 +93,13 @@ export default function ElectionDetailPage() {
 
       // Only fetch eligibility & results for authenticated users
       if (isAuthenticated) {
-        const [eligData] = await Promise.all([
-          electionsApi.checkMyEligibility(electionDbId).catch(() => null),
-        ]);
+        const eligData = await electionsApi.checkMyEligibility(electionDbId).catch(() => null);
         setEligibility(eligData);
+
+        if (eligData?.hasVoted) {
+          const proof = await electionsApi.verifyMyVote(electionDbId).catch(() => null);
+          setVoteProof(proof);
+        }
 
         // Fetch live results if active or ended
         if (
@@ -123,8 +130,9 @@ export default function ElectionDetailPage() {
     setIsVoting(true);
     try {
       const res = await electionsApi.castVote(electionDbId, { candidateId });
+      setVotedForCandidateId(candidateId);
       showToast('Your vote has been recorded on the blockchain!', 'success', res.txHash);
-      // Refresh eligibility and results
+      // Refresh eligibility, receipt proof, and results
       await loadData();
     } catch (err: any) {
       const msg = err.message || 'Failed to cast vote';
@@ -132,6 +140,12 @@ export default function ElectionDetailPage() {
     } finally {
       setIsVoting(false);
     }
+  };
+
+  const handleCopyTx = (txHash: string) => {
+    navigator.clipboard.writeText(txHash);
+    setCopiedTx(true);
+    setTimeout(() => setCopiedTx(false), 2000);
   };
 
   const handleSelfNominate = async (e: React.FormEvent) => {
@@ -174,46 +188,54 @@ export default function ElectionDetailPage() {
   const isEligible = eligibility?.isEligible ?? false;
   const canVote = isAuthenticated && isEligible && !hasVoted && status === ElectionStatus.ACTIVE;
   const showLiveResults =
-    (status === ElectionStatus.ENDED) ||
-    (status === ElectionStatus.ACTIVE && hasVoted);
+    status === ElectionStatus.ENDED || (status === ElectionStatus.ACTIVE && hasVoted);
 
   const voteStart = new Date(election.startDate).getTime() / 1000;
-  const voteEnd   = new Date(election.endDate).getTime()   / 1000;
-  const regEnd    = election.registrationDeadline
+  const voteEnd = new Date(election.endDate).getTime() / 1000;
+  const regEnd = election.registrationDeadline
     ? new Date(election.registrationDeadline).getTime() / 1000
     : null;
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleString(undefined, {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
 
   const countdownTarget =
-    status === ElectionStatus.REGISTRATION && regEnd ? regEnd :
-    status === ElectionStatus.UPCOMING             ? voteStart :
-    status === ElectionStatus.ACTIVE               ? voteEnd :
-    null;
+    status === ElectionStatus.REGISTRATION && regEnd
+      ? regEnd
+      : status === ElectionStatus.UPCOMING
+      ? voteStart
+      : status === ElectionStatus.ACTIVE
+      ? voteEnd
+      : null;
 
   const countdownLabel =
-    status === ElectionStatus.REGISTRATION ? 'Registration closes in' :
-    status === ElectionStatus.UPCOMING     ? 'Voting starts in' :
-    status === ElectionStatus.ACTIVE       ? 'Voting ends in' :
-    null;
+    status === ElectionStatus.REGISTRATION
+      ? 'Registration closes in'
+      : status === ElectionStatus.UPCOMING
+      ? 'Voting starts in'
+      : status === ElectionStatus.ACTIVE
+      ? 'Voting ends in'
+      : null;
 
   // Map API Candidate to card-compatible shape
   const mappedCandidates = candidates.map((c) => ({
-    id:          BigInt(c.onChainCandidateIndex ?? 0),
-    electionId:  BigInt(0),
-    name:        `${c.employee?.firstName ?? ''} ${c.employee?.lastName ?? ''}`.trim() || 'Unknown',
+    id: BigInt(c.onChainCandidateIndex ?? 0),
+    electionId: BigInt(0),
+    name: `${c.employee?.firstName ?? ''} ${c.employee?.lastName ?? ''}`.trim() || 'Unknown',
     description: c.statement || '',
-    imageUrl:    c.photoUrl || '',
+    imageUrl: c.photoUrl || '',
     walletAddress: '' as `0x${string}`,
-    voteCount:   BigInt(
+    voteCount: BigInt(
       results?.candidates.find((r) => r.candidateId === c.id)?.voteCount ?? 0
     ),
-    approved:    true,
-    exists:      true,
-    dbId:        c.id,
+    approved: true,
+    exists: true,
+    dbId: c.id,
   }));
 
   const totalVotes = BigInt(results?.totalVotes ?? 0);
@@ -221,7 +243,7 @@ export default function ElectionDetailPage() {
   return (
     <div className={`container ${styles.page}`}>
       <Link href="/elections" className={styles.backLink}>
-        Elections
+        ← Back to Elections
       </Link>
 
       <header className={`panel panel-pad ${styles.header}`}>
@@ -269,7 +291,7 @@ export default function ElectionDetailPage() {
                     candidate={candidate}
                     isVotingActive={status === ElectionStatus.ACTIVE}
                     hasVoted={hasVoted}
-                    isVotedFor={false}
+                    isVotedFor={candidate.dbId === votedForCandidateId}
                     onVote={() => handleVote(candidate.dbId)}
                     isLoadingVote={isVoting}
                     totalVotes={totalVotes}
@@ -292,7 +314,9 @@ export default function ElectionDetailPage() {
 
               <form onSubmit={handleSelfNominate} className={styles.formGrid}>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="cand-statement">Statement</label>
+                  <label className="form-label" htmlFor="cand-statement">
+                    Statement
+                  </label>
                   <textarea
                     id="cand-statement"
                     className="form-input"
@@ -303,7 +327,9 @@ export default function ElectionDetailPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="cand-slogan">Slogan (optional)</label>
+                  <label className="form-label" htmlFor="cand-slogan">
+                    Slogan (optional)
+                  </label>
                   <input
                     id="cand-slogan"
                     type="text"
@@ -352,7 +378,70 @@ export default function ElectionDetailPage() {
             </p>
           )}
 
-          {isAuthenticated && hasVoted && status === ElectionStatus.ACTIVE && (
+          {/* On-Chain Ballot Receipt Panel */}
+          {isAuthenticated && hasVoted && voteProof?.txHash && (
+            <div className={`panel panel-pad ${styles.receiptPanel}`}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  color: 'var(--color-success)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <CheckCircle size={18} />
+                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>
+                  Ballot Recorded
+                </h4>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-2)', margin: '0 0 0.85rem' }}>
+                Your ballot was cryptographically verified and recorded on Hyperledger Besu.
+              </p>
+              <dl className={styles.receiptList}>
+                <dt>Transaction Hash</dt>
+                <dd>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <code
+                      style={{
+                        fontSize: '0.72rem',
+                        wordBreak: 'break-all',
+                        background: 'var(--color-elevated)',
+                        padding: '0.15rem 0.35rem',
+                        borderRadius: 4,
+                      }}
+                    >
+                      {voteProof.txHash}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyTx(voteProof.txHash!)}
+                      className={styles.copyBtn}
+                      title="Copy transaction hash"
+                    >
+                      {copiedTx ? (
+                        <Check size={13} style={{ color: 'var(--color-success)' }} />
+                      ) : (
+                        <Copy size={13} />
+                      )}
+                    </button>
+                  </div>
+                </dd>
+                {voteProof.votedAt && (
+                  <>
+                    <dt>Timestamp</dt>
+                    <dd>{formatTime(voteProof.votedAt)}</dd>
+                  </>
+                )}
+                <dt>Consensus Engine</dt>
+                <dd>Hyperledger Besu (QBFT Private Ledger)</dd>
+                <dt>Ballot Secrecy</dt>
+                <dd>Preserved (Zero-Knowledge Hash)</dd>
+              </dl>
+            </div>
+          )}
+
+          {isAuthenticated && hasVoted && !voteProof?.txHash && status === ElectionStatus.ACTIVE && (
             <p className={`panel panel-pad ${styles.votedNotice}`}>
               <CheckCircle size={16} style={{ display: 'inline', marginRight: 6 }} />
               Your vote has been recorded on-chain.
@@ -368,7 +457,9 @@ export default function ElectionDetailPage() {
             )}
             <div>
               <dt>Voting window</dt>
-              <dd>{formatTime(election.startDate)} – {formatTime(election.endDate)}</dd>
+              <dd>
+                {formatTime(election.startDate)} – {formatTime(election.endDate)}
+              </dd>
             </div>
           </dl>
         </aside>
@@ -377,8 +468,12 @@ export default function ElectionDetailPage() {
       {toast.show && (
         <div className="toast-container">
           <div className={`toast toast-${toast.type}`}>
-            {toast.type === 'success' && <CheckCircle size={18} style={{ color: 'var(--color-success)' }} />}
-            {toast.type === 'error' && <AlertTriangle size={18} style={{ color: 'var(--color-danger)' }} />}
+            {toast.type === 'success' && (
+              <CheckCircle size={18} style={{ color: 'var(--color-success)' }} />
+            )}
+            {toast.type === 'error' && (
+              <AlertTriangle size={18} style={{ color: 'var(--color-danger)' }} />
+            )}
             {toast.type === 'info' && <Info size={18} style={{ color: 'var(--color-accent)' }} />}
             <span>{toast.message}</span>
             {toast.txHash && (
