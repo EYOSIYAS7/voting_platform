@@ -34,6 +34,13 @@ export class EligibilityRule {
   unitId: string | null;
 
   /**
+   * Specific Employee ID allowed.
+   * Null = not restricted to a single individual.
+   */
+  @Column({ type: 'varchar', nullable: true })
+  employeeId: string | null;
+
+  /**
    * Whether to include all recursive descendant units of unitId.
    * Ignored when unitId is null.
    */

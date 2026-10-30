@@ -904,11 +904,16 @@ export default function EmployeesPage() {
               <div className={styles.rolesList}>
                 {userRoles.map((r, idx) => {
                   const scopeUnit = units.find((u) => u.id === r.orgUnitId);
+                  const roleName =
+                    typeof r.role === 'object' && r.role !== null
+                      ? (r.role as any).name
+                      : r.role;
+
                   return (
-                    <div key={idx} className={styles.roleItem}>
+                    <div key={r.id || idx} className={styles.roleItem}>
                       <div>
                         <strong style={{ fontSize: '0.85rem', color: 'var(--color-accent)' }}>
-                          {r.role}
+                          {roleName}
                         </strong>
                         <span style={{ fontSize: '0.75rem', color: 'var(--color-text-3)', display: 'block' }}>
                           {r.orgUnitId ? `Scoped to: ${scopeUnit?.name || r.orgUnitId}` : 'Global Scope (All Units)'}
@@ -918,7 +923,7 @@ export default function EmployeesPage() {
                         type="button"
                         className="btn btn-ghost btn-sm"
                         style={{ color: 'var(--color-danger)' }}
-                        onClick={() => handleRevokeRole((r as any).id || '')}
+                        onClick={() => handleRevokeRole(r.id || '')}
                         title="Revoke role"
                       >
                         Revoke

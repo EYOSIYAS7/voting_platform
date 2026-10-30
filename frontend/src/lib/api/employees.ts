@@ -1,6 +1,7 @@
 import { api } from './client';
 import {
   Employee,
+  EmployeeWithDetails,
   EmployeeStatus,
   CreateEmployeeDto,
   UpdateEmployeeDto,
@@ -18,12 +19,12 @@ export const employeesApi = {
     status?: EmployeeStatus;
     positionId?: string;
     search?: string;
-  }): Promise<Employee[]> {
-    return api.get<Employee[]>('/employees', { params: filters });
+  }): Promise<EmployeeWithDetails[]> {
+    return api.get<EmployeeWithDetails[]>('/employees', { params: filters });
   },
 
-  getEmployee(id: string): Promise<Employee> {
-    return api.get<Employee>(`/employees/${id}`);
+  getEmployee(id: string): Promise<EmployeeWithDetails> {
+    return api.get<EmployeeWithDetails>(`/employees/${id}`);
   },
 
   createEmployee(dto: CreateEmployeeDto): Promise<Employee> {

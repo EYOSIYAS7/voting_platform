@@ -79,8 +79,11 @@ export interface UserAccount {
 }
 
 export interface UserRoleScope {
+  id?: string;
   role: SystemRole;
   orgUnitId: string | null;
+  roleId?: string;
+  userId?: string;
 }
 
 export interface AuthenticatedUser {
@@ -305,6 +308,7 @@ export interface EligibilityRule {
   id: string;
   electionId: string;
   unitId: string | null;
+  employeeId?: string | null;
   includeDescendants: boolean;
   allowedPositionIds: string[] | null;
   minTenureMonths: number;
@@ -315,6 +319,7 @@ export interface EligibilityRule {
 
 export interface CreateEligibilityRuleDto {
   unitId?: string;
+  employeeId?: string;
   includeDescendants?: boolean;
   allowedPositionIds?: string[];
   minTenureMonths?: number;

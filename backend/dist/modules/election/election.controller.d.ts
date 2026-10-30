@@ -18,12 +18,14 @@ export declare class ElectionController {
     getRules(id: string): Promise<import("./entities/eligibility-rule.entity.js").EligibilityRule[]>;
     removeRule(id: string, ruleId: string): Promise<void>;
     computeVoters(id: string): Promise<{
-        computed: number;
-        eligible: number;
+        electionId: string;
+        eligibleCount: number;
     }>;
     getVoters(id: string, page: number, limit: number): Promise<{
-        voters: import("./entities/election-voter.entity.js").ElectionVoter[];
+        data: import("./entities/election-voter.entity.js").ElectionVoter[];
         total: number;
+        page: number;
+        limit: number;
     }>;
     checkMyEligibility(id: string, req: Request): Promise<{
         eligible: boolean;

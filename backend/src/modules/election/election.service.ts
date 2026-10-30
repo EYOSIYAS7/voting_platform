@@ -57,7 +57,7 @@ export class ElectionService {
     if (new Date(dto.startDate) >= new Date(dto.endDate)) {
       throw new BadRequestException('startDate must be before endDate');
     }
-    if (dto.unitScopeId && dto.electionType === ElectionType.GENERAL) {
+    if (dto.unitScopeId && dto.electionType !== ElectionType.UNIT_SCOPED) {
       throw new BadRequestException(
         'unitScopeId can only be set when electionType is UNIT_SCOPED',
       );
@@ -151,9 +151,17 @@ export class ElectionService {
       throw new BadRequestException('Eligibility rules can only be modified in DRAFT or REGISTRATION status');
     }
 
+    if (dto.employeeId) {
+      const emp = await this.employeeRepo.findOne({ where: { id: dto.employeeId } });
+      if (!emp) {
+        throw new NotFoundException(`Employee with ID ${dto.employeeId} not found`);
+      }
+    }
+
     const rule = this.ruleRepo.create({
       electionId,
       unitId: dto.unitId ?? null,
+      employeeId: dto.employeeId ?? null,
       includeDescendants: dto.includeDescendants ?? true,
       allowedPositionIds: dto.allowedPositionIds ?? null,
       minTenureMonths: dto.minTenureMonths ?? 0,
@@ -184,7 +192,7 @@ export class ElectionService {
    * Existing rows for this election are deleted and recomputed fresh.
    * This is intentionally idempotent — safe to call multiple times.
    */
-  async computeEligibleVoters(electionId: string): Promise<{ computed: number; eligible: number }> {
+  async computeEligibleVoters(electionId: string): Promise<{ electionId: string; eligibleCount: number }> {
     const election = await this.findOne(electionId);
 
     if (election.status === ElectionStatus.CANCELLED) {
@@ -212,6 +220,16 @@ export class ElectionService {
       }
     } else {
       for (const rule of rules) {
+        if (rule.employeeId) {
+          const emp = await this.employeeRepo.findOne({
+            where: { id: rule.employeeId },
+          });
+          if (emp && (rule.requiredStatus === 'ANY' || emp.status === EmployeeStatus.ACTIVE)) {
+            eligibleIds.add(emp.id);
+          }
+          continue;
+        }
+
         let unitIds: string[] | null = null;
 
         if (rule.unitId) {
@@ -241,8 +259,10 @@ export class ElectionService {
 
         if (rule.minTenureMonths > 0) {
           // Filter by hired date — must be at least N months before now
+          // Use parameterized value to prevent SQL injection
           qb.andWhere(
-            `emp.hiredAt <= NOW() - INTERVAL '${rule.minTenureMonths} months'`,
+            `emp.hiredAt <= NOW() - MAKE_INTERVAL(months => :tenureMonths)`,
+            { tenureMonths: rule.minTenureMonths },
           );
         }
 
@@ -275,7 +295,7 @@ export class ElectionService {
       await manager.update(Election, { id: electionId }, { votersComputed: true });
     });
 
-    return { computed: eligibleIds.size, eligible: eligibleIds.size };
+    return { electionId, eligibleCount: eligibleIds.size };
   }
 
   /* ───────────────────────── VOTER QUERIES ──────────────────────────── */
@@ -284,10 +304,10 @@ export class ElectionService {
     electionId: string,
     page = 1,
     limit = 50,
-  ): Promise<{ voters: ElectionVoter[]; total: number }> {
+  ): Promise<{ data: ElectionVoter[]; total: number; page: number; limit: number }> {
     await this.findOne(electionId);
 
-    const [voters, total] = await this.voterRepo.findAndCount({
+    const [data, total] = await this.voterRepo.findAndCount({
       where: { electionId },
       relations: ['employee'],
       skip: (page - 1) * limit,
@@ -295,7 +315,7 @@ export class ElectionService {
       order: { checkedAt: 'ASC' },
     });
 
-    return { voters, total };
+    return { data, total, page, limit };
   }
 
   /** Check if a specific employee is eligible for an election */
@@ -332,6 +352,14 @@ export class ElectionService {
    * Only returns elections where voters have been computed.
    */
   async getMyElections(employeeId: string): Promise<Election[]> {
+    // Automatically compute voters for any elections that haven't been computed yet
+    const uncomputed = await this.electionRepo.find({
+      where: { votersComputed: false },
+    });
+    for (const el of uncomputed) {
+      await this.computeEligibleVoters(el.id).catch(() => {});
+    }
+
     const voterRows = await this.voterRepo.find({
       where: { employeeId, isEligible: true },
       select: ['electionId'],

@@ -4,6 +4,7 @@ export declare class EligibilityRule {
     electionId: string;
     election: Election;
     unitId: string | null;
+    employeeId: string | null;
     includeDescendants: boolean;
     allowedPositionIds: string[] | null;
     minTenureMonths: number;

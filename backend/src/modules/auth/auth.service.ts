@@ -183,15 +183,46 @@ export class AuthService {
   // ══════════════════════════════════════════════════════════════════════════
 
   async assignRole(dto: AssignRoleDto, grantedBy: string): Promise<UserRoleScope> {
-    const account = await this.accountRepo.findOne({ where: { id: dto.userId } });
-    if (!account) throw new NotFoundException('UserAccount not found');
+    let account = await this.accountRepo.findOne({
+      where: [{ id: dto.userId }, { employeeId: dto.userId }],
+    });
+
+    if (!account) {
+      // Check if employee exists
+      const employee = await this.employeeRepo.findOne({ where: { id: dto.userId } });
+      if (!employee) throw new NotFoundException('UserAccount and Employee not found');
+
+      // Auto-provision user account with default temporary credentials
+      const defaultPassword = 'ChangeMe@123';
+      const passwordHash = await bcrypt.hash(defaultPassword, BCRYPT_ROUNDS);
+      account = this.accountRepo.create({
+        employeeId: employee.id,
+        passwordHash,
+        mustChangePassword: true,
+        isActive: true,
+      });
+      account = await this.accountRepo.save(account);
+
+      // Auto-assign default EMPLOYEE role
+      const defaultEmpRole = await this.roleRepo.findOne({ where: { name: SystemRole.EMPLOYEE } });
+      if (defaultEmpRole) {
+        await this.scopeRepo.save(
+          this.scopeRepo.create({
+            userId: account.id,
+            roleId: defaultEmpRole.id,
+            orgUnitId: null,
+            grantedBy,
+          }),
+        );
+      }
+    }
 
     const role = await this.roleRepo.findOne({ where: { id: dto.roleId } });
     if (!role) throw new NotFoundException('Role not found');
 
     const existing = await this.scopeRepo.findOne({
       where: {
-        userId:    dto.userId,
+        userId:    account.id,
         roleId:    dto.roleId,
         orgUnitId: dto.orgUnitId ?? IsNull(),
       },
@@ -199,12 +230,14 @@ export class AuthService {
     if (existing) throw new ConflictException('This role scope is already assigned');
 
     const scope = this.scopeRepo.create({
-      userId:    dto.userId,
+      userId:    account.id,
       roleId:    dto.roleId,
       orgUnitId: dto.orgUnitId ?? null,
       grantedBy,
     });
-    return this.scopeRepo.save(scope);
+    const saved = await this.scopeRepo.save(scope);
+    saved.role = role;
+    return saved;
   }
 
   async revokeRole(scopeId: string, revokedBy: string): Promise<void> {
@@ -214,11 +247,24 @@ export class AuthService {
     this.eventEmitter.emit('auth.role.revoked', { scopeId, revokedBy });
   }
 
-  async getUserRoles(userId: string): Promise<UserRoleScope[]> {
-    return this.scopeRepo.find({
-      where: { userId },
+  async getUserRoles(userId: string): Promise<any[]> {
+    const account = await this.accountRepo.findOne({
+      where: [{ id: userId }, { employeeId: userId }],
+    });
+    if (!account) return [];
+
+    const scopes = await this.scopeRepo.find({
+      where: { userId: account.id },
       relations: ['role'],
     });
+
+    return scopes.map((s) => ({
+      id: s.id,
+      userId: s.userId,
+      roleId: s.roleId,
+      role: s.role?.name ?? s.roleId,
+      orgUnitId: s.orgUnitId,
+    }));
   }
 
   async getAllRoles(): Promise<Role[]> {

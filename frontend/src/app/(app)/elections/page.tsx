@@ -9,7 +9,7 @@ import { LoginModal } from '@/components/LoginModal';
 import { Vote, LogIn, AlertCircle } from 'lucide-react';
 import styles from './elections.module.css';
 
-type StatusFilter = 'All' | 'ACTIVE' | 'UPCOMING' | 'REGISTRATION' | 'ENDED';
+type StatusFilter = 'All' | 'ACTIVE' | 'UPCOMING' | 'REGISTRATION' | 'DRAFT' | 'ENDED';
 
 export default function ElectionsPage() {
   const { isAuthenticated, isInitialized } = useAuthStore();
@@ -49,7 +49,7 @@ export default function ElectionsPage() {
   }, [elections, searchQuery, activeFilter]);
 
   const counts = useMemo(() => {
-    const byStatus = { ACTIVE: 0, UPCOMING: 0, REGISTRATION: 0, ENDED: 0 };
+    const byStatus = { ACTIVE: 0, UPCOMING: 0, REGISTRATION: 0, DRAFT: 0, ENDED: 0 };
     elections.forEach(({ status }) => {
       if (status in byStatus) byStatus[status as keyof typeof byStatus] += 1;
     });
@@ -61,6 +61,7 @@ export default function ElectionsPage() {
     { value: 'ACTIVE', label: 'Open' },
     { value: 'REGISTRATION', label: 'Registration' },
     { value: 'UPCOMING', label: 'Upcoming' },
+    { value: 'DRAFT', label: 'Draft' },
     { value: 'ENDED', label: 'Closed' },
   ];
 
@@ -103,6 +104,10 @@ export default function ElectionsPage() {
             <div className="stat">
               <span>Registration</span>
               <strong>{isLoading ? '—' : counts.REGISTRATION}</strong>
+            </div>
+            <div className="stat">
+              <span>Draft / Upcoming</span>
+              <strong>{isLoading ? '—' : counts.DRAFT + counts.UPCOMING}</strong>
             </div>
             <div className="stat">
               <span>Closed</span>

@@ -87,6 +87,11 @@ export class CreateEligibilityRuleDto {
   @IsUUID()
   unitId?: string;
 
+  @ApiPropertyOptional({ description: 'Specific Employee ID allowed. Null = not scoped to a single employee.' })
+  @IsOptional()
+  @IsUUID()
+  employeeId?: string;
+
   @ApiPropertyOptional({ default: true, description: 'Include all recursive descendant units' })
   @IsOptional()
   @IsBoolean()

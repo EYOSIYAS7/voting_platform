@@ -90,6 +90,7 @@ __decorate([
 ], PatchElectionStatusDto.prototype, "status", void 0);
 export class CreateEligibilityRuleDto {
     unitId;
+    employeeId;
     includeDescendants;
     allowedPositionIds;
     minTenureMonths;
@@ -102,6 +103,12 @@ __decorate([
     IsUUID(),
     __metadata("design:type", String)
 ], CreateEligibilityRuleDto.prototype, "unitId", void 0);
+__decorate([
+    ApiPropertyOptional({ description: 'Specific Employee ID allowed. Null = not scoped to a single employee.' }),
+    IsOptional(),
+    IsUUID(),
+    __metadata("design:type", String)
+], CreateEligibilityRuleDto.prototype, "employeeId", void 0);
 __decorate([
     ApiPropertyOptional({ default: true, description: 'Include all recursive descendant units' }),
     IsOptional(),

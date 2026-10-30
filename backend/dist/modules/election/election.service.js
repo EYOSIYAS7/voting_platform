@@ -45,7 +45,7 @@ let ElectionService = class ElectionService {
         if (new Date(dto.startDate) >= new Date(dto.endDate)) {
             throw new BadRequestException('startDate must be before endDate');
         }
-        if (dto.unitScopeId && dto.electionType === ElectionType.GENERAL) {
+        if (dto.unitScopeId && dto.electionType !== ElectionType.UNIT_SCOPED) {
             throw new BadRequestException('unitScopeId can only be set when electionType is UNIT_SCOPED');
         }
         const election = this.electionRepo.create({
@@ -117,9 +117,16 @@ let ElectionService = class ElectionService {
         if (![ElectionStatus.DRAFT, ElectionStatus.REGISTRATION].includes(election.status)) {
             throw new BadRequestException('Eligibility rules can only be modified in DRAFT or REGISTRATION status');
         }
+        if (dto.employeeId) {
+            const emp = await this.employeeRepo.findOne({ where: { id: dto.employeeId } });
+            if (!emp) {
+                throw new NotFoundException(`Employee with ID ${dto.employeeId} not found`);
+            }
+        }
         const rule = this.ruleRepo.create({
             electionId,
             unitId: dto.unitId ?? null,
+            employeeId: dto.employeeId ?? null,
             includeDescendants: dto.includeDescendants ?? true,
             allowedPositionIds: dto.allowedPositionIds ?? null,
             minTenureMonths: dto.minTenureMonths ?? 0,
@@ -158,6 +165,15 @@ let ElectionService = class ElectionService {
         }
         else {
             for (const rule of rules) {
+                if (rule.employeeId) {
+                    const emp = await this.employeeRepo.findOne({
+                        where: { id: rule.employeeId },
+                    });
+                    if (emp && (rule.requiredStatus === 'ANY' || emp.status === EmployeeStatus.ACTIVE)) {
+                        eligibleIds.add(emp.id);
+                    }
+                    continue;
+                }
                 let unitIds = null;
                 if (rule.unitId) {
                     unitIds = rule.includeDescendants
@@ -177,7 +193,7 @@ let ElectionService = class ElectionService {
                     qb.andWhere('emp.positionId IN (:...positionIds)', { positionIds: rule.allowedPositionIds });
                 }
                 if (rule.minTenureMonths > 0) {
-                    qb.andWhere(`emp.hiredAt <= NOW() - INTERVAL '${rule.minTenureMonths} months'`);
+                    qb.andWhere(`emp.hiredAt <= NOW() - MAKE_INTERVAL(months => :tenureMonths)`, { tenureMonths: rule.minTenureMonths });
                 }
                 const employees = await qb.getMany();
                 employees.forEach((e) => eligibleIds.add(e.id));
@@ -203,18 +219,18 @@ let ElectionService = class ElectionService {
             }
             await manager.update(Election, { id: electionId }, { votersComputed: true });
         });
-        return { computed: eligibleIds.size, eligible: eligibleIds.size };
+        return { electionId, eligibleCount: eligibleIds.size };
     }
     async getVoters(electionId, page = 1, limit = 50) {
         await this.findOne(electionId);
-        const [voters, total] = await this.voterRepo.findAndCount({
+        const [data, total] = await this.voterRepo.findAndCount({
             where: { electionId },
             relations: ['employee'],
             skip: (page - 1) * limit,
             take: limit,
             order: { checkedAt: 'ASC' },
         });
-        return { voters, total };
+        return { data, total, page, limit };
     }
     async checkMyEligibility(electionId, employeeId) {
         await this.findOne(electionId);
@@ -234,6 +250,12 @@ let ElectionService = class ElectionService {
         });
     }
     async getMyElections(employeeId) {
+        const uncomputed = await this.electionRepo.find({
+            where: { votersComputed: false },
+        });
+        for (const el of uncomputed) {
+            await this.computeEligibleVoters(el.id).catch(() => { });
+        }
         const voterRows = await this.voterRepo.find({
             where: { employeeId, isEligible: true },
             select: ['electionId'],

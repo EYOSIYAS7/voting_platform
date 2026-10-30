@@ -14,6 +14,7 @@ let EligibilityRule = class EligibilityRule {
     electionId;
     election;
     unitId;
+    employeeId;
     includeDescendants;
     allowedPositionIds;
     minTenureMonths;
@@ -38,6 +39,10 @@ __decorate([
     Column({ type: 'varchar', nullable: true }),
     __metadata("design:type", Object)
 ], EligibilityRule.prototype, "unitId", void 0);
+__decorate([
+    Column({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
+], EligibilityRule.prototype, "employeeId", void 0);
 __decorate([
     Column({ default: true }),
     __metadata("design:type", Boolean)

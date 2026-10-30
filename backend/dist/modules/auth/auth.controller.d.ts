@@ -14,5 +14,5 @@ export declare class AuthController {
     assignRole(dto: AssignRoleDto, adminId: string): Promise<import("./entities/user-role-scope.entity.js").UserRoleScope>;
     revokeRole(scopeId: string, adminId: string): Promise<void>;
     getRoles(): Promise<import("./entities/role.entity.js").Role[]>;
-    getUserRoles(userId: string): Promise<import("./entities/user-role-scope.entity.js").UserRoleScope[]>;
+    getUserRoles(userId: string): Promise<any[]>;
 }

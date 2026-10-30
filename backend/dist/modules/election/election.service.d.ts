@@ -25,12 +25,14 @@ export declare class ElectionService {
     getRules(electionId: string): Promise<EligibilityRule[]>;
     removeRule(electionId: string, ruleId: string): Promise<void>;
     computeEligibleVoters(electionId: string): Promise<{
-        computed: number;
-        eligible: number;
+        electionId: string;
+        eligibleCount: number;
     }>;
     getVoters(electionId: string, page?: number, limit?: number): Promise<{
-        voters: ElectionVoter[];
+        data: ElectionVoter[];
         total: number;
+        page: number;
+        limit: number;
     }>;
     checkMyEligibility(electionId: string, employeeId: string): Promise<{
         eligible: boolean;

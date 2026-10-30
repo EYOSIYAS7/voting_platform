@@ -28,7 +28,7 @@ export declare class AuthService {
     }>;
     assignRole(dto: AssignRoleDto, grantedBy: string): Promise<UserRoleScope>;
     revokeRole(scopeId: string, revokedBy: string): Promise<void>;
-    getUserRoles(userId: string): Promise<UserRoleScope[]>;
+    getUserRoles(userId: string): Promise<any[]>;
     getAllRoles(): Promise<Role[]>;
     getProfile(user: AuthenticatedUser): Promise<object>;
 }

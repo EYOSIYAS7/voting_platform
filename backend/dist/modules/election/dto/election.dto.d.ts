@@ -18,6 +18,7 @@ export declare class PatchElectionStatusDto {
 }
 export declare class CreateEligibilityRuleDto {
     unitId?: string;
+    employeeId?: string;
     includeDescendants?: boolean;
     allowedPositionIds?: string[];
     minTenureMonths?: number;

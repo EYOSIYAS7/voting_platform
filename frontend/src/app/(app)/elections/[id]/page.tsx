@@ -360,6 +360,12 @@ export default function ElectionDetailPage() {
           )}
 
           {/* Voting / eligibility callout */}
+          {status === ElectionStatus.DRAFT && (
+            <p className={`panel panel-pad ${styles.note}`}>
+              This election is currently in draft preparation. Candidate registration and voting will open once finalized by the administrator.
+            </p>
+          )}
+
           {!isAuthenticated && (
             <p className={`panel panel-pad ${styles.note}`}>
               Sign in to vote or register as a candidate.
