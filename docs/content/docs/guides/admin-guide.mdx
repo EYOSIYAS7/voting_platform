@@ -1,0 +1,71 @@
+---
+title: Administrator Guide
+description: Step-by-step instructions for Election Administrators and System Admins
+---
+
+# Election Administrator Guide
+
+Election Administrators (`ELECTION_ADMIN`) and System Administrators (`SYSTEM_ADMIN`) manage election creation, candidate nominations, voter eligibility rules, and blockchain synchronization.
+
+---
+
+## 1. Creating a New Election
+
+1. Navigate to **Managed Elections** (`/my-elections`).
+2. Click **Create New Election**.
+3. Fill in the election parameters:
+   - **Title & Description**: Detailed summary of the election purpose.
+   - **Ballot Type**:
+     - *Organization-Wide*: Open to all eligible employees across the enterprise.
+     - *Unit-Scoped*: Restricted to a specific department or division.
+   - **Maximum Candidates**: Cap on the number of approved candidates allowed on the ballot.
+   - **Timeline Configuration**:
+     - *Registration Deadline*: When candidate nominations close.
+     - *Voting Start Date*: When live voting begins (auto-starts if untouched).
+     - *Voting End Date*: When voting concludes (auto-ends if untouched).
+4. Click **Create Election**. The election is created in `DRAFT` status.
+
+---
+
+## 2. Configuring Eligibility Rules
+
+1. Open the election management workspace (`/my-elections/:id`).
+2. Select the **Rules & Voter Roll** tab.
+3. Click **Add Rule**:
+   - **Department Scope**: Select an organizational unit and toggle whether to include all sub-departments.
+   - **Allowed Positions**: Select specific job roles eligible to vote.
+   - **Minimum Tenure**: Specify minimum service months required.
+4. Click **Compute Voter Roll**:
+   - The eligibility engine scans all active employees against the configured rules.
+   - Eligible employee records are generated in the voter roll table.
+
+---
+
+## 3. Managing Candidate Applications
+
+1. Switch to the **Candidates** tab in the management workspace.
+2. **Reviewing Applications**:
+   - For pending nominations, click **Approve** to accept the nominee onto the ballot, or **Reject** (with a mandatory feedback reason).
+3. **Manual Nomination**:
+   - Administrators can directly nominate an eligible employee using the **Nominate Candidate** button.
+
+---
+
+## 4. Starting Live Voting (Unified Action)
+
+When the registration and review phases are complete:
+1. Click **Start Live Voting & Publish to Chain**.
+2. This single action atomically:
+   - Updates the election status to `ACTIVE`.
+   - Deploys the election smart contract on-chain (`onChainElectionId`).
+   - Assigns on-chain ballot slots to all approved candidates (`onChainCandidateIndex`).
+   - Finalizes the voter roll.
+
+---
+
+## 5. Concluding Elections & Reviewing Results
+
+- Elections automatically conclude once the configured `endDate` is reached.
+- Alternatively, administrators can click **End Voting & Conclude** to close voting ahead of schedule.
+- Once ended, immutable cryptographic tallies are fetched directly from the smart contract and displayed on the results dashboard.
+

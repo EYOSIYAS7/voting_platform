@@ -1,0 +1,9 @@
+{
+  "title": "Smart Contracts & Blockchain",
+  "icon": "ShieldCheck",
+  "pages": [
+    "overview",
+    "voting-contract"
+  ]
+}
+

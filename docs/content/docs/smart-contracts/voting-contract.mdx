@@ -1,0 +1,102 @@
+---
+title: VotingPlatform Specification
+description: Technical specification for VotingPlatform.sol smart contract
+---
+
+# `VotingPlatform.sol` Contract Specification
+
+The `VotingPlatform` contract manages multiple simultaneous elections, candidate ballot slots, and immutable vote tallies using an administrative server-relay pattern.
+
+---
+
+## Data Structures
+
+### `Election`
+```solidity
+struct Election {
+    uint256 id;
+    string  title;
+    string  description;
+    string  imageUrl;
+    uint256 registrationStart;  // candidate registration start timestamp
+    uint256 registrationEnd;    // candidate registration deadline
+    uint256 votingStart;        // voting open timestamp
+    uint256 votingEnd;          // voting close timestamp
+    uint256 totalVotes;         // total ballots cast
+    bool    exists;
+}
+```
+
+### `Candidate`
+```solidity
+struct Candidate {
+    uint256 id;
+    uint256 electionId;
+    string  name;
+    string  description;
+    string  imageUrl;
+    address walletAddress;
+    uint256 voteCount;          // recorded ballot count
+    bool    approved;           // status flag
+    bool    exists;
+}
+```
+
+---
+
+## Core Contract Methods
+
+### 1. `createElection`
+```solidity
+function createElection(
+    string memory title,
+    string memory description,
+    string memory imageUrl,
+    uint256 registrationStart,
+    uint256 registrationEnd,
+    uint256 votingStart,
+    uint256 votingEnd
+) external onlyAdmin returns (uint256 electionId);
+```
+Initializes a new election slot on the blockchain. Emits `ElectionCreated(electionId, title, votingStart, votingEnd)`.
+
+---
+
+### 2. `addCandidate`
+```solidity
+function addCandidate(
+    uint256 electionId,
+    string memory name,
+    string memory description,
+    string memory imageUrl,
+    address walletAddress,
+    bool approved
+) external onlyAdmin returns (uint256 candidateId);
+```
+Registers a candidate on-chain within an existing election. Returns the zero-based or sequential `candidateId`.
+
+---
+
+### 3. `vote` (Server-Relayed)
+```solidity
+function vote(
+    uint256 electionId,
+    uint256 candidateId,
+    bytes32 voterRef
+) external onlyAdmin;
+```
+Submits a ballot for a candidate in an active election.
+- Restricted to authorized relayer administrators (`onlyAdmin`).
+- Enforces that `block.timestamp >= votingStart` and `block.timestamp <= votingEnd`.
+- Increments `candidate.voteCount` and `election.totalVotes`.
+- Emits `VoteCast(electionId, candidateId, voterRef)`.
+  - `voterRef`: `keccak256(abi.encodePacked(employeeId))` provides an opaque, tamper-evident audit trace without revealing employee PII.
+
+---
+
+### 4. Read Methods (Gas-Free)
+
+- **`getElection(uint256 electionId)`**: Returns election metadata and current total vote count.
+- **`getCandidate(uint256 electionId, uint256 candidateId)`**: Returns candidate details and individual vote tally.
+- **`getCandidateIds(uint256 electionId)`**: Returns array of all candidate IDs registered for an election.
+

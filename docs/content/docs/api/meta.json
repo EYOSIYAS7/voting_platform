@@ -1,0 +1,15 @@
+{
+  "title": "API Reference",
+  "icon": "Code",
+  "pages": [
+    "auth",
+    "elections",
+    "candidates",
+    "voting",
+    "organizations",
+    "organizational-units",
+    "employees",
+    "positions"
+  ]
+}
+

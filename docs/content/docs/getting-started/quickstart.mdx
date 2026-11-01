@@ -1,0 +1,135 @@
+---
+title: Quickstart Guide
+description: Step-by-step setup to run the Voting Platform locally
+---
+
+# Quickstart Guide
+
+This guide walks you through setting up and running the entire platform on your local machine, including the PostgreSQL database, NestJS backend, and Next.js frontend.
+
+---
+
+## 1. Prerequisites
+
+Before starting, ensure you have the following installed:
+
+- **Node.js**: `v20.x` or later (LTS recommended)
+- **pnpm**: `v10.x` (`npm install -g pnpm`)
+- **Docker & Docker Compose**: For running the PostgreSQL instance
+- **Git**
+
+---
+
+## 2. Clone and Install Dependencies
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/voting-platform.git
+cd voting-platform
+
+# Install Backend dependencies
+cd backend
+pnpm install
+
+# Install Frontend dependencies
+cd ../frontend
+pnpm install
+
+# Install Contracts dependencies
+cd ../contracts
+pnpm install
+```
+
+---
+
+## 3. Start Database (PostgreSQL)
+
+The platform requires PostgreSQL (with UUID extension support). A Docker container is pre-configured on port `5435`:
+
+```bash
+# Start Docker PostgreSQL container
+docker run --name postgres-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=voting_platform -p 5435:5432 -d postgres
+```
+
+Verify that the database is running:
+```bash
+docker ps --filter "name=postgres-db"
+```
+
+---
+
+## 4. Environment Configuration
+
+Copy the example environment files in both the `backend` and `frontend` directories:
+
+### Backend Configuration (`backend/.env`)
+```bash
+cd backend
+cp .env.example .env
+```
+Ensure your database credentials match:
+```ini
+DATABASE_HOST=localhost
+DATABASE_PORT=5435
+DATABASE_USER=postgres
+DATABASE_PASSWORD=password
+DATABASE_NAME=voting_platform
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-chars
+PORT=3001
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Frontend Configuration (`frontend/.env`)
+```bash
+cd ../frontend
+cp .env.example .env
+```
+Ensure the API URL points to the backend:
+```ini
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+```
+
+---
+
+## 5. Seed the Database
+
+Run the database seeder to populate sample organizations, departments, roles, and test user accounts:
+
+```bash
+cd backend
+pnpm run seed
+```
+
+This generates initial administrative accounts:
+- **System Admin**: `admin@platform.local` / `Password123!`
+- **Election Admin**: `election.admin@platform.local` / `Password123!`
+- **Sample Voters**: Multiple employee accounts across Engineering, Marketing, and Operations.
+
+---
+
+## 6. Launch the Applications
+
+Run the backend and frontend in development mode:
+
+### Terminal 1: Backend
+```bash
+cd backend
+pnpm run start:dev
+```
+- API Base URL: `http://localhost:3001/api`
+- Swagger OpenAPI Docs: `http://localhost:3001/api/docs`
+
+### Terminal 2: Frontend
+```bash
+cd frontend
+pnpm run dev
+```
+- Web Application: `http://localhost:3000`
+
+### Terminal 3: Documentation
+```bash
+cd docs
+pnpm run dev
+```
+- Documentation Portal: `http://localhost:3002` (or next available port)
+

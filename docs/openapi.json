@@ -1,0 +1,2490 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/organizations": {
+      "post": {
+        "operationId": "OrganizationController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new organization",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "get": {
+        "operationId": "OrganizationController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all organizations",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/api/organizations/{id}": {
+      "get": {
+        "operationId": "OrganizationController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a single organization",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "patch": {
+        "operationId": "OrganizationController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an organization",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "delete": {
+        "operationId": "OrganizationController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an organization",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/api/organizational-units": {
+      "post": {
+        "operationId": "OrganizationalUnitController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationalUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new organizational unit",
+        "tags": [
+          "organizational-units"
+        ]
+      },
+      "get": {
+        "operationId": "OrganizationalUnitController_findAll",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all units for an organization (flat list)",
+        "tags": [
+          "organizational-units"
+        ]
+      }
+    },
+    "/api/organizational-units/tree": {
+      "get": {
+        "operationId": "OrganizationalUnitController_getTree",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get nested tree structure for an organization",
+        "tags": [
+          "organizational-units"
+        ]
+      }
+    },
+    "/api/organizational-units/{id}": {
+      "get": {
+        "operationId": "OrganizationalUnitController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a single organizational unit",
+        "tags": [
+          "organizational-units"
+        ]
+      },
+      "patch": {
+        "operationId": "OrganizationalUnitController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationalUnitDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an organizational unit",
+        "tags": [
+          "organizational-units"
+        ]
+      },
+      "delete": {
+        "operationId": "OrganizationalUnitController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an organizational unit (must have no children)",
+        "tags": [
+          "organizational-units"
+        ]
+      }
+    },
+    "/api/organizational-units/{id}/descendants": {
+      "get": {
+        "operationId": "OrganizationalUnitController_getDescendants",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all descendant unit IDs (for scope calculation)",
+        "tags": [
+          "organizational-units"
+        ]
+      }
+    },
+    "/api/organizational-units/{id}/ancestors": {
+      "get": {
+        "operationId": "OrganizationalUnitController_getAncestors",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get ancestor chain / breadcrumb for a unit",
+        "tags": [
+          "organizational-units"
+        ]
+      }
+    },
+    "/api/positions": {
+      "post": {
+        "operationId": "PositionController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePositionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new organizational position",
+        "tags": [
+          "positions"
+        ]
+      },
+      "get": {
+        "operationId": "PositionController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all positions",
+        "tags": [
+          "positions"
+        ]
+      }
+    },
+    "/api/positions/{id}": {
+      "get": {
+        "operationId": "PositionController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a single position",
+        "tags": [
+          "positions"
+        ]
+      },
+      "patch": {
+        "operationId": "PositionController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePositionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a position",
+        "tags": [
+          "positions"
+        ]
+      },
+      "delete": {
+        "operationId": "PositionController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a position",
+        "tags": [
+          "positions"
+        ]
+      }
+    },
+    "/api/employees": {
+      "post": {
+        "operationId": "EmployeeController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEmployeeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register a new employee",
+        "tags": [
+          "employees"
+        ]
+      },
+      "get": {
+        "operationId": "EmployeeController_findAll",
+        "parameters": [
+          {
+            "name": "unitId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "ACTIVE",
+                "INACTIVE",
+                "PENDING",
+                "TERMINATED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "positionId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List employees with optional filters",
+        "tags": [
+          "employees"
+        ]
+      }
+    },
+    "/api/employees/{id}": {
+      "get": {
+        "operationId": "EmployeeController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a single employee",
+        "tags": [
+          "employees"
+        ]
+      },
+      "patch": {
+        "operationId": "EmployeeController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmployeeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update employee details or status",
+        "tags": [
+          "employees"
+        ]
+      },
+      "delete": {
+        "operationId": "EmployeeController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove an employee record",
+        "tags": [
+          "employees"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Login with email and password — returns JWT access token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the current authenticated user profile",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change own password (required on first login)",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/accounts": {
+      "post": {
+        "operationId": "AuthController_createAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[ADMIN] Create a login account for an employee",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/roles/assign": {
+      "post": {
+        "operationId": "AuthController_assignRole",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[ADMIN] Assign a role (optionally scoped) to a user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/roles/scopes/{scopeId}": {
+      "delete": {
+        "operationId": "AuthController_revokeRole",
+        "parameters": [
+          {
+            "name": "scopeId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[ADMIN] Revoke a role scope from a user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/roles": {
+      "get": {
+        "operationId": "AuthController_getRoles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all available system roles",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/users/{userId}/roles": {
+      "get": {
+        "operationId": "AuthController_getUserRoles",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[ADMIN] Get all role scopes for a user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/elections": {
+      "post": {
+        "operationId": "ElectionController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateElectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new election (SYSTEM_ADMIN or ELECTION_ADMIN)",
+        "tags": [
+          "elections"
+        ]
+      },
+      "get": {
+        "operationId": "ElectionController_findAll",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "DRAFT",
+                "REGISTRATION",
+                "UPCOMING",
+                "ACTIVE",
+                "ENDED",
+                "CANCELLED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List elections (filterable by organizationId and status)",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/mine": {
+      "get": {
+        "operationId": "ElectionController_getMyElections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all elections the authenticated employee is eligible for",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/created-by-me": {
+      "get": {
+        "operationId": "ElectionController_getMyCreatedElections",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all elections created by the authenticated employee",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{id}": {
+      "get": {
+        "operationId": "ElectionController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a single election with its eligibility rules",
+        "tags": [
+          "elections"
+        ]
+      },
+      "put": {
+        "operationId": "ElectionController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateElectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a DRAFT election (SYSTEM_ADMIN or ELECTION_ADMIN)",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{id}/status": {
+      "patch": {
+        "operationId": "ElectionController_patchStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchElectionStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Advance or cancel election status (SYSTEM_ADMIN or ELECTION_ADMIN)",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{id}/eligibility-rules": {
+      "post": {
+        "operationId": "ElectionController_addRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEligibilityRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add an eligibility rule to an election",
+        "tags": [
+          "elections"
+        ]
+      },
+      "get": {
+        "operationId": "ElectionController_getRules",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List eligibility rules for an election",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{id}/eligibility-rules/{ruleId}": {
+      "delete": {
+        "operationId": "ElectionController_removeRule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ruleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove an eligibility rule",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{id}/compute-voters": {
+      "post": {
+        "operationId": "ElectionController_computeVoters",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trigger (re)computation of eligible voters for an election. Safe to call multiple times.",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{id}/voters": {
+      "get": {
+        "operationId": "ElectionController_getVoters",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List pre-computed eligible voters for an election (paginated)",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{id}/my-eligibility": {
+      "get": {
+        "operationId": "ElectionController_checkMyEligibility",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check whether the authenticated employee is eligible to vote",
+        "tags": [
+          "elections"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/publish-onchain": {
+      "post": {
+        "operationId": "VotingController_publishElectionOnChain",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishElectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish an election to the blockchain (ADMIN). Must be done before votes can be cast.",
+        "tags": [
+          "voting"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates/{candidateId}/publish-onchain": {
+      "post": {
+        "operationId": "VotingController_publishCandidateOnChain",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish an APPROVED candidate to the blockchain (ADMIN). Election must be published first.",
+        "tags": [
+          "voting"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/vote": {
+      "post": {
+        "operationId": "VotingController_castVote",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CastVoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cast a vote in an ACTIVE election. Server relays the tx on-chain. One vote per employee.",
+        "tags": [
+          "voting"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/results": {
+      "get": {
+        "operationId": "VotingController_getResults",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read live vote counts from the blockchain, enriched with DB candidate details.",
+        "tags": [
+          "voting"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/verify-vote": {
+      "get": {
+        "operationId": "VotingController_verifyMyVote",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get your own vote proof (tx hash + timestamp). Does NOT reveal which candidate you voted for.",
+        "tags": [
+          "voting"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates": {
+      "get": {
+        "operationId": "CandidateController_findAll",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED",
+                "WITHDRAWN"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List candidates for an election (filterable by status)",
+        "tags": [
+          "candidates"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates/me": {
+      "get": {
+        "operationId": "CandidateController_getMyCandidacy",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get my own candidacy in this election (if any)",
+        "tags": [
+          "candidates"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates/{candidateId}": {
+      "get": {
+        "operationId": "CandidateController_findOne",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a single candidate by ID",
+        "tags": [
+          "candidates"
+        ]
+      },
+      "patch": {
+        "operationId": "CandidateController_update",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCandidateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update candidate statement / slogan / photo. Own candidate or admin only.",
+        "tags": [
+          "candidates"
+        ]
+      },
+      "delete": {
+        "operationId": "CandidateController_remove",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hard-delete a candidate entry (ADMIN only, not allowed in ACTIVE/ENDED elections)",
+        "tags": [
+          "candidates"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates/nominate": {
+      "post": {
+        "operationId": "CandidateController_nominateByAdmin",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NominateCandidateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin nominates an employee as a candidate (ADMIN only)",
+        "tags": [
+          "candidates"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates/self-nominate": {
+      "post": {
+        "operationId": "CandidateController_selfNominate",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelfNominateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Employee self-nominates for an election",
+        "tags": [
+          "candidates"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates/{candidateId}/review": {
+      "patch": {
+        "operationId": "CandidateController_review",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCandidateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin approves or rejects a PENDING candidate (SYSTEM_ADMIN / ELECTION_ADMIN)",
+        "tags": [
+          "candidates"
+        ]
+      }
+    },
+    "/api/elections/{electionId}/candidates/{candidateId}/withdraw": {
+      "patch": {
+        "operationId": "CandidateController_withdraw",
+        "parameters": [
+          {
+            "name": "electionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Withdraw a candidacy. Own candidate or admin. Not allowed once election is ACTIVE.",
+        "tags": [
+          "candidates"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Organizational Voting Platform API",
+    "description": "Secure internal voting platform — Organization · Elections · Blockchain",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "CreateOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Ministry of Technology"
+          },
+          "description": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          }
+        }
+      },
+      "CreateOrganizationalUnitDto": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Parent unit ID — omit for top-level units"
+          },
+          "name": {
+            "type": "string",
+            "example": "IT Directorate"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unitType": {
+            "type": "string",
+            "enum": [
+              "ORGANIZATION",
+              "DEPUTY_DIRECTORATE",
+              "DIRECTORATE",
+              "DIVISION",
+              "DEPARTMENT",
+              "TEAM",
+              "OTHER"
+            ]
+          },
+          "headEmployeeId": {
+            "type": "string",
+            "description": "UUID of the employee who heads this unit"
+          }
+        },
+        "required": [
+          "organizationId",
+          "name",
+          "unitType"
+        ]
+      },
+      "UpdateOrganizationalUnitDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unitType": {
+            "type": "string",
+            "enum": [
+              "ORGANIZATION",
+              "DEPUTY_DIRECTORATE",
+              "DIRECTORATE",
+              "DIVISION",
+              "DEPARTMENT",
+              "TEAM",
+              "OTHER"
+            ]
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "headEmployeeId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          }
+        }
+      },
+      "CreatePositionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Division Head"
+          },
+          "description": {
+            "type": "string"
+          },
+          "level": {
+            "type": "number",
+            "description": "Org chart level — lower = higher rank (1 = top)",
+            "example": 3
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdatePositionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "level": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateEmployeeDto": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "example": "EMP-001"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "organizationalUnitId": {
+            "type": "string",
+            "description": "UUID of the organizational unit this employee belongs to"
+          },
+          "positionId": {
+            "type": "object",
+            "description": "UUID of the employee position"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "PENDING",
+              "TERMINATED"
+            ],
+            "default": "PENDING"
+          },
+          "hiredAt": {
+            "type": "string"
+          },
+          "profileImageUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "firstName",
+          "lastName",
+          "email",
+          "organizationalUnitId"
+        ]
+      },
+      "UpdateEmployeeDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "organizationalUnitId": {
+            "type": "string"
+          },
+          "positionId": {
+            "type": "object"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "PENDING",
+              "TERMINATED"
+            ]
+          },
+          "hiredAt": {
+            "type": "string"
+          },
+          "profileImageUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "john.doe@org.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "MySecureP@ssw0rd"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "TokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "string"
+          },
+          "mustChangePassword": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "accessToken",
+          "expiresIn",
+          "mustChangePassword"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "CreateAccountDto": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string"
+          },
+          "temporaryPassword": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Temporary password; user must change on first login"
+          }
+        },
+        "required": [
+          "employeeId",
+          "temporaryPassword"
+        ]
+      },
+      "AssignRoleDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "UserAccount UUID"
+          },
+          "roleId": {
+            "type": "string",
+            "description": "Role UUID"
+          },
+          "orgUnitId": {
+            "type": "string",
+            "description": "OrganizationalUnit UUID — null means global scope"
+          }
+        },
+        "required": [
+          "userId",
+          "roleId"
+        ]
+      },
+      "CreateElectionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Annual Board of Directors Election 2025"
+          },
+          "description": {
+            "type": "string",
+            "example": "Election of the board for FY2025"
+          },
+          "organizationId": {
+            "type": "string",
+            "example": "ccc69c16-5177-4d0a-89ee-042f08402abe"
+          },
+          "electionType": {
+            "type": "string",
+            "enum": [
+              "GENERAL",
+              "UNIT_SCOPED",
+              "POSITION_SCOPED"
+            ],
+            "default": "GENERAL"
+          },
+          "unitScopeId": {
+            "type": "string",
+            "description": "Root unit ID for UNIT_SCOPED elections",
+            "example": "db155f70-d35d-4ae6-b918-d86ff349c378"
+          },
+          "registrationDeadline": {
+            "type": "string",
+            "example": "2025-11-01T08:00:00.000Z"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2025-12-01T08:00:00.000Z"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2025-12-07T17:00:00.000Z"
+          },
+          "maxCandidates": {
+            "type": "number",
+            "default": 0,
+            "description": "0 = unlimited candidates"
+          }
+        },
+        "required": [
+          "title",
+          "organizationId",
+          "startDate",
+          "endDate"
+        ]
+      },
+      "UpdateElectionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Annual Board of Directors Election 2025"
+          },
+          "description": {
+            "type": "string",
+            "example": "Election of the board for FY2025"
+          },
+          "organizationId": {
+            "type": "string",
+            "example": "ccc69c16-5177-4d0a-89ee-042f08402abe"
+          },
+          "electionType": {
+            "type": "string",
+            "enum": [
+              "GENERAL",
+              "UNIT_SCOPED",
+              "POSITION_SCOPED"
+            ],
+            "default": "GENERAL"
+          },
+          "unitScopeId": {
+            "type": "string",
+            "description": "Root unit ID for UNIT_SCOPED elections",
+            "example": "db155f70-d35d-4ae6-b918-d86ff349c378"
+          },
+          "registrationDeadline": {
+            "type": "string",
+            "example": "2025-11-01T08:00:00.000Z"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2025-12-01T08:00:00.000Z"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2025-12-07T17:00:00.000Z"
+          },
+          "maxCandidates": {
+            "type": "number",
+            "default": 0,
+            "description": "0 = unlimited candidates"
+          }
+        }
+      },
+      "PatchElectionStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "REGISTRATION",
+              "UPCOMING",
+              "ACTIVE",
+              "ENDED",
+              "CANCELLED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CreateEligibilityRuleDto": {
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "string",
+            "description": "Unit ID to scope eligibility. Null = no unit restriction."
+          },
+          "employeeId": {
+            "type": "string",
+            "description": "Specific Employee ID allowed. Null = not scoped to a single employee."
+          },
+          "includeDescendants": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include all recursive descendant units"
+          },
+          "allowedPositionIds": {
+            "description": "Array of Position UUIDs allowed. Null = no position restriction.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "minTenureMonths": {
+            "type": "number",
+            "default": 0,
+            "description": "Minimum tenure in full months"
+          },
+          "requiredStatus": {
+            "type": "string",
+            "default": "ACTIVE",
+            "description": "ACTIVE | INACTIVE | ANY"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "PublishElectionDto": {
+        "type": "object",
+        "properties": {
+          "imageUrl": {
+            "type": "string",
+            "description": "Optional cover image URL to store on-chain",
+            "example": "https://cdn.insa.gov.et/elections/cover.jpg"
+          }
+        }
+      },
+      "CastVoteDto": {
+        "type": "object",
+        "properties": {
+          "candidateId": {
+            "type": "string",
+            "description": "The candidate UUID (from our DB) the employee is voting for",
+            "example": "a1b2c3d4-..."
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional anonymous note / reason (not stored on-chain)",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "candidateId"
+        ]
+      },
+      "NominateCandidateDto": {
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "description": "Employee UUID to nominate as a candidate",
+            "example": "8188f870-251d-47d6-9ce7-9a168eb1d01f"
+          },
+          "statement": {
+            "type": "string",
+            "description": "Campaign statement / bio (max 2000 chars)",
+            "example": "I will champion transparency and accountability..."
+          },
+          "slogan": {
+            "type": "string",
+            "description": "Short campaign slogan (max 200 chars)",
+            "example": "Security First, Always."
+          },
+          "photoUrl": {
+            "type": "string",
+            "description": "URL to a candidate campaign photo",
+            "example": "https://cdn.insa.gov.et/candidates/photo.jpg"
+          }
+        },
+        "required": [
+          "employeeId"
+        ]
+      },
+      "SelfNominateDto": {
+        "type": "object",
+        "properties": {
+          "statement": {
+            "type": "string",
+            "description": "Campaign statement / bio (max 2000 chars)"
+          },
+          "slogan": {
+            "type": "string",
+            "description": "Short campaign slogan (max 200 chars)"
+          },
+          "photoUrl": {
+            "type": "string",
+            "description": "URL to a candidate campaign photo"
+          }
+        }
+      },
+      "UpdateCandidateDto": {
+        "type": "object",
+        "properties": {
+          "statement": {
+            "type": "string"
+          },
+          "slogan": {
+            "type": "string"
+          },
+          "photoUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewCandidateDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "APPROVED",
+              "REJECTED"
+            ],
+            "description": "Admin decision — APPROVED or REJECTED"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "description": "Required when status is REJECTED. Reason for rejection.",
+            "example": "Candidate does not meet minimum tenure requirement."
+          }
+        },
+        "required": [
+          "status"
+        ]
+      }
+    }
+  }
+}

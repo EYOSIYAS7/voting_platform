@@ -1,0 +1,72 @@
+---
+title: Blockchain & Smart Contracts
+description: Hardhat workspace, network environments, and deployment management
+---
+
+# Blockchain & Smart Contracts
+
+The blockchain layer acts as the immutable ledger for elections, candidate ballot slots, and cryptographic vote tallies. The smart contracts are written in Solidity (`^0.8.24`) and managed using Hardhat.
+
+---
+
+## 1. Supported Networks
+
+The platform is designed to run seamlessly on both private consortium networks and public testnets:
+
+| Network | Type | Chain ID | RPC Endpoint | Contract Address |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ethereum Sepolia** *(Active)* | Public Testnet | `11155111` | `https://ethereum-sepolia-rpc.publicnode.com` | `0x978e008c1122FbC4B4F4F45051133b7e851E7b6f` |
+| **Hyperledger Besu** | Private Consortium | `1337` | `http://172.27.3.251/rpc` | `0xf9fb4ED309385F3759b684B7B3A0d9769Eb7EC83` |
+
+---
+
+## 2. Hardhat Workspace Structure
+
+All blockchain contracts, deployment scripts, and unit tests are located in `/contracts`:
+
+```
+contracts/
+├── contracts/
+│   └── VotingPlatform.sol        # Core multi-election voting contract
+├── scripts/
+│   └── deploy.js                 # Deployment script
+├── test/
+│   └── VotingPlatform.test.js    # Hardhat test suite
+├── hardhat.config.js             # Hardhat network & compiler configuration
+└── deployments/
+    └── besu_backup.json          # Deployment history & backups
+```
+
+---
+
+## 3. Compilation & Unit Testing
+
+```bash
+cd contracts
+
+# Install dependencies
+pnpm install
+
+# Compile Solidity smart contracts
+pnpm hardhat compile
+
+# Run the contract test suite
+pnpm hardhat test
+```
+
+---
+
+## 4. Deploying to Networks
+
+### Deploy to Sepolia Testnet
+```bash
+npx hardhat run scripts/deploy.js --network sepolia
+```
+
+### Deploy to Hyperledger Besu
+```bash
+npx hardhat run scripts/deploy.js --network besu
+```
+
+Upon successful deployment, the script outputs the deployed contract address and transaction hash. Update `CONTRACT_ADDRESS` in `backend/.env` accordingly.
+

@@ -1,0 +1,9 @@
+{
+  "title": "User & Admin Guides",
+  "icon": "BookOpen",
+  "pages": [
+    "admin-guide",
+    "voter-guide"
+  ]
+}
+

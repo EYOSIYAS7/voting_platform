@@ -1,0 +1,58 @@
+---
+title: Voter Guide
+description: Employee guide for self-nomination, ballot casting, and cryptographic receipt verification
+---
+
+# Voter & Employee Guide
+
+This guide explains how employees participate in elections, submit candidate nominations, cast ballots, and verify their cryptographic vote receipts.
+
+---
+
+## 1. Browsing Elections
+
+1. Log in with your employee email and password.
+2. Navigate to **Elections** (`/elections`).
+3. Filter by election status:
+   - **Active**: Elections currently open for voting.
+   - **Upcoming**: Elections scheduled to start soon or in candidate review.
+   - **Registration**: Elections currently accepting candidate self-nominations.
+   - **Closed**: Concluded elections with finalized results.
+
+---
+
+## 2. Registering as a Candidate
+
+During the `REGISTRATION` phase of an election:
+1. Open the election details page (`/elections/:id`).
+2. If self-nominations are open, the **Register as a Candidate** card will appear.
+3. Fill in your campaign details:
+   - **Campaign Statement**: Summary of your goals and qualifications.
+   - **Slogan**: Catchy slogan displayed under your candidate card.
+4. Click **Submit Candidacy**.
+5. Your application enters `PENDING` review. Once an Election Administrator reviews your application, your status will update to `APPROVED` or `REJECTED` (with feedback).
+
+---
+
+## 3. Casting Your Ballot
+
+When an election is in the `ACTIVE` (Live Voting) phase:
+1. Open the election details page (`/elections/:id`).
+2. The page verifies your eligibility:
+   - If eligible, you will see the active candidate cards with the option to select a nominee.
+   - If ineligible, an explanatory banner details the required department or role rules.
+3. Review the candidate statements and platforms.
+4. Click **Select Candidate**, then click **Confirm & Submit Vote**.
+5. The transaction is relayed on-chain via the zero-gas server relayer.
+
+---
+
+## 4. Cryptographic Vote Receipt & Audit
+
+Immediately after submitting your ballot:
+1. A green confirmation banner displays your official **Transaction Hash** (`txHash`).
+2. You can click **Verify on Blockchain Explorer** to view the mined block receipt on the public ledger.
+3. The receipt confirms:
+   - Your ballot was officially recorded within the legal voting window.
+   - The choice you voted for remains confidential and cannot be viewed by third parties.
+

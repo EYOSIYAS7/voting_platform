@@ -1,0 +1,68 @@
+---
+title: Configuration & Environment
+description: Comprehensive reference for backend, frontend, and blockchain configuration
+---
+
+# Configuration & Environment Variables
+
+This document provides a complete reference for all environment variables used by the Voting Platform.
+
+---
+
+## Backend (`backend/.env`)
+
+The backend is a NestJS application using TypeORM for relational data and Viem / Ethers for blockchain interactions.
+
+### Database Settings
+
+| Variable | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `DB_HOST` | `string` | `localhost` | PostgreSQL host address |
+| `DB_PORT` | `number` | `5435` | PostgreSQL port (5435 mapped via Docker) |
+| `DB_USERNAME` | `string` | `postgres` | Database superuser or application username |
+| `DB_PASSWORD` | `string` | `password` | Database user password |
+| `DB_DATABASE` | `string` | `voting_platform` | Primary PostgreSQL database name |
+
+### Application & Security
+
+| Variable | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `PORT` | `number` | `3001` | HTTP port the NestJS server binds to |
+| `APP_ENV` | `string` | `development` | Environment mode (`development` or `production`) |
+| `CORS_ORIGIN` | `string` | `http://localhost:3000` | Allowed origin for frontend requests |
+| `JWT_SECRET` | `string` | — | Secret key used to sign access tokens (min 32 chars) |
+| `JWT_EXPIRES_IN` | `string` | `8h` | Lifetime of access tokens |
+| `JWT_REFRESH_SECRET` | `string` | — | Secret key used to sign refresh tokens |
+| `JWT_REFRESH_EXPIRES_IN` | `string` | `7d` | Lifetime of refresh tokens |
+
+### Blockchain & Relayer Wallet (Sepolia Testnet)
+
+| Variable | Type | Example / Default | Description |
+| :--- | :--- | :--- | :--- |
+| `SEPOLIA_RPC_URL` | `string` | `https://ethereum-sepolia-rpc.publicnode.com` | JSON-RPC endpoint for Sepolia testnet |
+| `CHAIN_ID` | `number` | `11155111` | Network Chain ID (11155111 for Sepolia) |
+| `CONTRACT_ADDRESS` | `string` | `0x978e008c1122FbC4B4F4F45051133b7e851E7b6f` | Deployed `VotingPlatform.sol` contract address |
+| `SERVER_WALLET_PRIVATE_KEY` | `string` | `0x...` | Relayer private key used to sign transactions |
+
+### Private Consortium (Hyperledger Besu Backup)
+
+When running against an internal private Hyperledger Besu network, configure:
+
+```ini
+BESU_RPC_URL=http://172.27.3.251/rpc
+CHAIN_ID=1337
+CONTRACT_ADDRESS=0xf9fb4ED309385F3759b684B7B3A0d9769Eb7EC83
+SERVER_WALLET_PRIVATE_KEY=0x96e6f11c9b8cdfed5e6bdc37c38cf08ddf681f86c61f7063581d89ca9a3ef4c8
+```
+
+---
+
+## Frontend (`frontend/.env`)
+
+The frontend is a Next.js App Router application.
+
+| Variable | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `NEXT_PUBLIC_API_URL` | `string` | `http://localhost:3001/api` | Base URL of the backend REST API |
+| `NEXT_PUBLIC_EXPLORER_URL` | `string` | `https://sepolia.etherscan.io` | Blockchain explorer for ballot & tx verification |
+
