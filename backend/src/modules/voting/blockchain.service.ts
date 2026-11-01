@@ -65,9 +65,15 @@ export class BlockchainService implements OnModuleInit {
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit() {
-    const rpcUrl = this.config.get<string>('BESU_RPC_URL');
+    const rpcUrl =
+      this.config.get<string>('SEPOLIA_RPC_URL') ||
+      this.config.get<string>('BESU_RPC_URL') ||
+      this.config.get<string>('RPC_URL');
     const chainId = parseInt(
-      this.config.get<string>('BESU_CHAIN_ID') ?? '1337',
+      this.config.get<string>('CHAIN_ID') ??
+        this.config.get<string>('SEPOLIA_CHAIN_ID') ??
+        this.config.get<string>('BESU_CHAIN_ID') ??
+        '11155111',
       10,
     );
     const contractAddress = this.config.get<string>('CONTRACT_ADDRESS');
@@ -75,15 +81,17 @@ export class BlockchainService implements OnModuleInit {
 
     if (!rpcUrl || !contractAddress || !privateKey) {
       this.logger.error(
-        'Missing blockchain config: BESU_RPC_URL, CONTRACT_ADDRESS, SERVER_WALLET_PRIVATE_KEY must all be set.',
+        'Missing blockchain config: RPC_URL/SEPOLIA_RPC_URL/BESU_RPC_URL, CONTRACT_ADDRESS, SERVER_WALLET_PRIVATE_KEY must all be set.',
       );
       return;
     }
 
-    // Define a custom chain for Hyperledger Besu (any chainId, no public explorer)
+    const chainName = chainId === 11155111 ? 'Ethereum Sepolia' : 'Hyperledger Besu';
+
+    // Define chain definition for viem
     this.besuChain = defineChain({
       id: chainId,
-      name: 'Hyperledger Besu',
+      name: chainName,
       nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
       rpcUrls: {
         default: { http: [rpcUrl] },
@@ -284,6 +292,14 @@ export class BlockchainService implements OnModuleInit {
       functionName: 'getElectionStatus',
       args: [onChainElectionId],
     }) as Promise<string>;
+  }
+
+  async currentTime(): Promise<bigint> {
+    return this.publicClient.readContract({
+      address: this.contractAddress,
+      abi: VOTING_ABI,
+      functionName: 'currentTime',
+    }) as Promise<bigint>;
   }
 
   async getServerWalletAddress(): Promise<Address> {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './CountdownTimer.module.css';
 
 interface Props {
@@ -30,16 +30,36 @@ function calc(target: number): TimeLeft {
 
 export function CountdownTimer({ targetTimestamp, compact, onExpire }: Props) {
   const [tl, setTl] = useState<TimeLeft>(() => calc(targetTimestamp));
+  const onExpireRef = useRef(onExpire);
+  const firedRef = useRef(false);
 
   useEffect(() => {
-    if (tl.total === 0) { onExpire?.(); return; }
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    const initial = calc(targetTimestamp);
+    setTl(initial);
+    firedRef.current = false;
+
+    if (initial.total === 0) {
+      return;
+    }
+
     const id = setInterval(() => {
       const next = calc(targetTimestamp);
       setTl(next);
-      if (next.total === 0) { onExpire?.(); clearInterval(id); }
+      if (next.total === 0) {
+        clearInterval(id);
+        if (!firedRef.current) {
+          firedRef.current = true;
+          onExpireRef.current?.();
+        }
+      }
     }, 1000);
+
     return () => clearInterval(id);
-  }, [targetTimestamp, onExpire]);
+  }, [targetTimestamp]);
 
   if (tl.total === 0) return <span className={styles.expired}>Ended</span>;
 

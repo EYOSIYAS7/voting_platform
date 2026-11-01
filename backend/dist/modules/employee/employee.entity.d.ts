@@ -15,11 +15,11 @@ export declare class Employee {
     phone: string;
     organizationalUnitId: string;
     organizationalUnit: OrganizationalUnit;
-    positionId: string;
-    position: Position;
+    positionId: string | null;
+    position: Position | null;
     status: EmployeeStatus;
-    profileImageUrl: string;
-    hiredAt: Date;
+    profileImageUrl: string | null;
+    hiredAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }

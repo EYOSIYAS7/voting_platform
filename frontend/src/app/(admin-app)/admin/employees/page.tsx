@@ -161,7 +161,7 @@ export default function EmployeesPage() {
         email: email.trim(),
         phone: phone.trim() || undefined,
         organizationalUnitId: unitId,
-        positionId: positionId || undefined,
+        positionId: positionId ? positionId : null,
         status,
         hiredAt: hiredAt ? new Date(hiredAt).toISOString() : undefined,
       };
@@ -235,7 +235,7 @@ export default function EmployeesPage() {
         email: email.trim(),
         phone: phone.trim() || undefined,
         organizationalUnitId: unitId,
-        positionId: positionId || undefined,
+        positionId: positionId ? positionId : null,
         status,
         hiredAt: hiredAt ? new Date(hiredAt).toISOString() : undefined,
       });

@@ -10,6 +10,7 @@ import { Role } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
 import { Employee } from '../employee/employee.entity.js';
+import { Position } from '../position/position.entity.js';
 
 // Strategies & Guards
 import { LocalStrategy } from './strategies/local.strategy.js';
@@ -44,6 +45,7 @@ import { AuthController } from './auth.controller.js';
       Permission,
       UserRoleScope,
       Employee,         // needed to look up email & employeeId
+      Position,
     ]),
   ],
   providers: [

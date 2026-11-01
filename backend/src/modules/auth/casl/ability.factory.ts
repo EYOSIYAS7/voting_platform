@@ -52,6 +52,13 @@ export class AbilityFactory {
       // Audit — read access
       can('read', 'audit');
       can('read', 'result');
+
+      // Employee self-service
+      can('create', 'vote');
+      can('read',   'profile');
+      can('update', 'profile');
+      can('create', 'wallet-binding');
+      can('read',   'wallet-binding');
     }
 
     if (roles.includes(SystemRole.EMPLOYEE)) {

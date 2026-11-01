@@ -58,9 +58,9 @@ __decorate([
 ], CreateEmployeeDto.prototype, "organizationalUnitId", void 0);
 __decorate([
     ApiPropertyOptional({ description: 'UUID of the employee position' }),
-    IsUUID(),
     IsOptional(),
-    __metadata("design:type", String)
+    IsUUID(),
+    __metadata("design:type", Object)
 ], CreateEmployeeDto.prototype, "positionId", void 0);
 __decorate([
     ApiPropertyOptional({ enum: EmployeeStatus, default: EmployeeStatus.PENDING }),
@@ -123,9 +123,9 @@ __decorate([
 ], UpdateEmployeeDto.prototype, "organizationalUnitId", void 0);
 __decorate([
     ApiPropertyOptional(),
-    IsUUID(),
     IsOptional(),
-    __metadata("design:type", String)
+    IsUUID(),
+    __metadata("design:type", Object)
 ], UpdateEmployeeDto.prototype, "positionId", void 0);
 __decorate([
     ApiPropertyOptional({ enum: EmployeeStatus }),

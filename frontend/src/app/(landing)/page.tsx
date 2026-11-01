@@ -98,7 +98,7 @@ const STEPS = [
   {
     num: "03",
     label: "Cast Immutable On-Chain Vote",
-    desc: "Submit an EVM-signed transaction to the Hyperledger Besu smart contract via the secure server relay. Your ballot is sealed forever.",
+    desc: "Submit your choice. The secure server relay wallet signs and writes an immutable transaction to the blockchain ledger on your behalf.",
   },
 ];
 

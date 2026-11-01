@@ -7,6 +7,7 @@ import { Role } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
 import { Employee } from '../employee/employee.entity.js';
+import { Position } from '../position/position.entity.js';
 import { AuthenticatedUser } from '../../common/types/jwt-payload.types.js';
 import { CreateAccountDto, AssignRoleDto, ChangePasswordDto, TokenResponseDto } from './dto/auth.dto.js';
 export declare class AuthService {
@@ -15,11 +16,13 @@ export declare class AuthService {
     private readonly permissionRepo;
     private readonly scopeRepo;
     private readonly employeeRepo;
+    private readonly positionRepo;
     private readonly jwtService;
     private readonly configService;
     private readonly eventEmitter;
     private readonly dataSource;
-    constructor(accountRepo: Repository<UserAccount>, roleRepo: Repository<Role>, permissionRepo: Repository<Permission>, scopeRepo: Repository<UserRoleScope>, employeeRepo: Repository<Employee>, jwtService: JwtService, configService: ConfigService, eventEmitter: EventEmitter2, dataSource: DataSource);
+    constructor(accountRepo: Repository<UserAccount>, roleRepo: Repository<Role>, permissionRepo: Repository<Permission>, scopeRepo: Repository<UserRoleScope>, employeeRepo: Repository<Employee>, positionRepo: Repository<Position>, jwtService: JwtService, configService: ConfigService, eventEmitter: EventEmitter2, dataSource: DataSource);
+    syncAutomaticRoleAndScope(employeeId: string, accountId: string, grantedBy: string): Promise<void>;
     createAccount(dto: CreateAccountDto, createdBy: string): Promise<UserAccount>;
     validateLocalCredentials(email: string, password: string): Promise<UserAccount | null>;
     login(account: UserAccount): Promise<TokenResponseDto>;

@@ -35,9 +35,9 @@ export class CreateEmployeeDto {
   organizationalUnitId: string;
 
   @ApiPropertyOptional({ description: 'UUID of the employee position' })
-  @IsUUID()
   @IsOptional()
-  positionId?: string;
+  @IsUUID()
+  positionId?: string | null;
 
   @ApiPropertyOptional({ enum: EmployeeStatus, default: EmployeeStatus.PENDING })
   @IsEnum(EmployeeStatus)
@@ -82,9 +82,9 @@ export class UpdateEmployeeDto {
   organizationalUnitId?: string;
 
   @ApiPropertyOptional()
-  @IsUUID()
   @IsOptional()
-  positionId?: string;
+  @IsUUID()
+  positionId?: string | null;
 
   @ApiPropertyOptional({ enum: EmployeeStatus })
   @IsEnum(EmployeeStatus)

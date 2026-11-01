@@ -18,6 +18,7 @@ import { Role, SystemRole } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
 import { Employee } from '../employee/employee.entity.js';
+import { Position } from '../position/position.entity.js';
 import { JwtPayload, AuthenticatedUser } from '../../common/types/jwt-payload.types.js';
 import {
   CreateAccountDto,
@@ -48,6 +49,9 @@ export class AuthService {
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
 
+    @InjectRepository(Position)
+    private readonly positionRepo: Repository<Position>,
+
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
@@ -58,38 +62,97 @@ export class AuthService {
   // Account Management
   // ══════════════════════════════════════════════════════════════════════════
 
-  async createAccount(dto: CreateAccountDto, createdBy: string): Promise<UserAccount> {
-    const employee = await this.employeeRepo.findOne({ where: { id: dto.employeeId } });
-    if (!employee) throw new NotFoundException('Employee not found');
-
-    const existing = await this.accountRepo.findOne({ where: { employeeId: dto.employeeId } });
-    if (existing) throw new ConflictException('An account already exists for this employee');
-
-    const passwordHash = await bcrypt.hash(dto.temporaryPassword, BCRYPT_ROUNDS);
-
-    const account = this.accountRepo.create({
-      employeeId:         dto.employeeId,
-      passwordHash,
-      mustChangePassword: true,
-      isActive:           true,
+  /**
+   * Synchronizes role and unit scope automatically based on employee position level:
+   * - Positions with the least level (lowest rank / highest number) get EMPLOYEE role.
+   * - Positions with higher level than least level get ELECTION_ADMIN role.
+   * - Unit scope is set directly to employee.organizationalUnitId.
+   */
+  async syncAutomaticRoleAndScope(employeeId: string, accountId: string, grantedBy: string): Promise<void> {
+    const emp = await this.employeeRepo.findOne({
+      where: { id: employeeId },
+      relations: ['position', 'organizationalUnit'],
     });
-    const saved = await this.accountRepo.save(account);
+    if (!emp) return;
 
-    // Auto-assign EMPLOYEE role
+    const activePositions = await this.positionRepo.find({ where: { isActive: true } });
+    const maxLevel = activePositions.length > 0
+      ? Math.max(...activePositions.map((p) => p.level))
+      : 99;
+
+    const isLeastLevel = !emp.position || emp.position.level >= maxLevel;
+    const targetRoleName = isLeastLevel ? SystemRole.EMPLOYEE : SystemRole.ELECTION_ADMIN;
+
+    const targetRole = await this.roleRepo.findOne({ where: { name: targetRoleName } });
     const employeeRole = await this.roleRepo.findOne({ where: { name: SystemRole.EMPLOYEE } });
-    if (employeeRole) {
-      await this.scopeRepo.save(
+    if (!targetRole) return;
+
+    const targetOrgUnitId = emp.organizationalUnitId ?? null;
+
+    const existingScopes = await this.scopeRepo.find({
+      where: { userId: accountId },
+      relations: ['role'],
+    });
+
+    // Remove old EMPLOYEE and ELECTION_ADMIN scopes (keep SYSTEM_ADMIN if present)
+    const scopesToRemove = existingScopes.filter(
+      (s) => s.role?.name === SystemRole.ELECTION_ADMIN || s.role?.name === SystemRole.EMPLOYEE,
+    );
+    if (scopesToRemove.length > 0) {
+      await this.scopeRepo.remove(scopesToRemove);
+    }
+
+    const newScopes: UserRoleScope[] = [];
+    newScopes.push(
+      this.scopeRepo.create({
+        userId: accountId,
+        roleId: targetRole.id,
+        orgUnitId: targetOrgUnitId,
+        grantedBy,
+      }),
+    );
+
+    if (targetRoleName === SystemRole.ELECTION_ADMIN && employeeRole) {
+      newScopes.push(
         this.scopeRepo.create({
-          userId:    saved.id,
-          roleId:    employeeRole.id,
-          orgUnitId: null,
-          grantedBy: createdBy,
+          userId: accountId,
+          roleId: employeeRole.id,
+          orgUnitId: targetOrgUnitId,
+          grantedBy,
         }),
       );
     }
 
-    this.eventEmitter.emit('auth.account.created', { accountId: saved.id, createdBy });
-    return saved;
+    await this.scopeRepo.save(newScopes);
+  }
+
+  async createAccount(dto: CreateAccountDto, createdBy: string): Promise<UserAccount> {
+    const employee = await this.employeeRepo.findOne({ where: { id: dto.employeeId } });
+    if (!employee) throw new NotFoundException('Employee not found');
+
+    const passwordHash = await bcrypt.hash(dto.temporaryPassword, BCRYPT_ROUNDS);
+
+    let account = await this.accountRepo.findOne({ where: { employeeId: dto.employeeId } });
+    if (account) {
+      account.passwordHash = passwordHash;
+      account.mustChangePassword = true;
+      account.isActive = true;
+      account = await this.accountRepo.save(account);
+    } else {
+      account = this.accountRepo.create({
+        employeeId: dto.employeeId,
+        passwordHash,
+        mustChangePassword: true,
+        isActive: true,
+      });
+      account = await this.accountRepo.save(account);
+    }
+
+    // Auto-assign role and unit scope automatically
+    await this.syncAutomaticRoleAndScope(employee.id, account.id, createdBy);
+
+    this.eventEmitter.emit('auth.account.created', { accountId: account.id, createdBy });
+    return account;
   }
 
   // ══════════════════════════════════════════════════════════════════════════

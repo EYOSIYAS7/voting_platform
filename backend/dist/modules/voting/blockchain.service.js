@@ -35,17 +35,23 @@ let BlockchainService = BlockchainService_1 = class BlockchainService {
         this.config = config;
     }
     onModuleInit() {
-        const rpcUrl = this.config.get('BESU_RPC_URL');
-        const chainId = parseInt(this.config.get('BESU_CHAIN_ID') ?? '1337', 10);
+        const rpcUrl = this.config.get('SEPOLIA_RPC_URL') ||
+            this.config.get('BESU_RPC_URL') ||
+            this.config.get('RPC_URL');
+        const chainId = parseInt(this.config.get('CHAIN_ID') ??
+            this.config.get('SEPOLIA_CHAIN_ID') ??
+            this.config.get('BESU_CHAIN_ID') ??
+            '11155111', 10);
         const contractAddress = this.config.get('CONTRACT_ADDRESS');
         const privateKey = this.config.get('SERVER_WALLET_PRIVATE_KEY');
         if (!rpcUrl || !contractAddress || !privateKey) {
-            this.logger.error('Missing blockchain config: BESU_RPC_URL, CONTRACT_ADDRESS, SERVER_WALLET_PRIVATE_KEY must all be set.');
+            this.logger.error('Missing blockchain config: RPC_URL/SEPOLIA_RPC_URL/BESU_RPC_URL, CONTRACT_ADDRESS, SERVER_WALLET_PRIVATE_KEY must all be set.');
             return;
         }
+        const chainName = chainId === 11155111 ? 'Ethereum Sepolia' : 'Hyperledger Besu';
         this.besuChain = defineChain({
             id: chainId,
-            name: 'Hyperledger Besu',
+            name: chainName,
             nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
             rpcUrls: {
                 default: { http: [rpcUrl] },
@@ -166,6 +172,13 @@ let BlockchainService = BlockchainService_1 = class BlockchainService {
             abi: VOTING_ABI,
             functionName: 'getElectionStatus',
             args: [onChainElectionId],
+        });
+    }
+    async currentTime() {
+        return this.publicClient.readContract({
+            address: this.contractAddress,
+            abi: VOTING_ABI,
+            functionName: 'currentTime',
         });
     }
     async getServerWalletAddress() {

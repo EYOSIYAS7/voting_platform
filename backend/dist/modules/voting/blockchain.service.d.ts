@@ -278,6 +278,7 @@ export declare class BlockchainService implements OnModuleInit {
         totalVotes: bigint;
     }>;
     getElectionStatusOnChain(onChainElectionId: bigint): Promise<string>;
+    currentTime(): Promise<bigint>;
     getServerWalletAddress(): Promise<Address>;
 }
 export {};

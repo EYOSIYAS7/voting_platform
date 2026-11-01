@@ -1,0 +1,12 @@
+{
+  "_comment": "PERMANENT BACKUP OF HYPERLEDGER BESU PRIVATE NETWORK DEPLOYMENT",
+  "network": "besu",
+  "chainId": 1337,
+  "rpcUrl": "http://172.27.3.251/rpc",
+  "wsUrl": "ws://172.27.3.251/ws",
+  "contractAddress": "0xf9fb4ED309385F3759b684B7B3A0d9769Eb7EC83",
+  "deployerAddress": "0xC7EA0c7c299120fD3DC85EF9f10e12254B8d2971",
+  "serverRelayPrivateKey": "0x96e6f11c9b8cdfed5e6bdc37c38cf08ddf681f86c61f7063581d89ca9a3ef4c8",
+  "deployedAt": "2026-10-26T09:42:01.421Z"
+}
+

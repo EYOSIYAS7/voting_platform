@@ -1,9 +1,22 @@
+import { OnApplicationBootstrap } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Employee, EmployeeStatus } from './employee.entity.js';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto/employee.dto.js';
-export declare class EmployeeService {
+import { Position } from '../position/position.entity.js';
+import { OrganizationalUnit } from '../organizational-unit/organizational-unit.entity.js';
+import { UserAccount } from '../auth/entities/user-account.entity.js';
+import { Role } from '../auth/entities/role.entity.js';
+import { UserRoleScope } from '../auth/entities/user-role-scope.entity.js';
+export declare class EmployeeService implements OnApplicationBootstrap {
     private readonly repo;
-    constructor(repo: Repository<Employee>);
+    private readonly positionRepo;
+    private readonly unitRepo;
+    private readonly accountRepo;
+    private readonly roleRepo;
+    private readonly scopeRepo;
+    constructor(repo: Repository<Employee>, positionRepo: Repository<Position>, unitRepo: Repository<OrganizationalUnit>, accountRepo: Repository<UserAccount>, roleRepo: Repository<Role>, scopeRepo: Repository<UserRoleScope>);
+    onApplicationBootstrap(): Promise<void>;
+    syncRoleAndScopeForEmployee(employeeId: string, grantedBy?: string): Promise<void>;
     create(dto: CreateEmployeeDto): Promise<Employee>;
     findAll(filters?: {
         unitId?: string;

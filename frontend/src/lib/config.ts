@@ -9,24 +9,40 @@ export const CONTRACT_ADDRESS: string =
   '';
 
 export const BESU_CHAIN_ID = parseInt(
-  process.env.NEXT_PUBLIC_BESU_CHAIN_ID || '1337'
+  process.env.NEXT_PUBLIC_CHAIN_ID ||
+    process.env.NEXT_PUBLIC_SEPOLIA_CHAIN_ID ||
+    process.env.NEXT_PUBLIC_BESU_CHAIN_ID ||
+    '11155111'
 );
+
+const isSepolia = BESU_CHAIN_ID === 11155111;
 
 export const BESU_CHAIN = {
   id: BESU_CHAIN_ID,
-  name: process.env.NEXT_PUBLIC_BESU_CHAIN_NAME || 'Besu Network',
+  name:
+    process.env.NEXT_PUBLIC_CHAIN_NAME ||
+    (isSepolia ? 'Ethereum Sepolia' : 'Besu Network'),
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: {
     default: {
-      http:      [process.env.NEXT_PUBLIC_BESU_RPC_URL || 'http://172.27.3.251/rpc'],
-      webSocket: [process.env.NEXT_PUBLIC_BESU_WS_URL  || 'ws://172.27.3.251/ws'],
+      http: [
+        process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
+          process.env.NEXT_PUBLIC_BESU_RPC_URL ||
+          'https://rpc.sepolia.org',
+      ],
     },
     public: {
-      http:      [process.env.NEXT_PUBLIC_BESU_RPC_URL || 'http://172.27.3.251/rpc'],
-      webSocket: [process.env.NEXT_PUBLIC_BESU_WS_URL  || 'ws://172.27.3.251/ws'],
+      http: [
+        process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL ||
+          process.env.NEXT_PUBLIC_BESU_RPC_URL ||
+          'https://rpc.sepolia.org',
+      ],
     },
   },
   blockExplorers: {
-    default: { name: 'Besu Explorer', url: '' },
+    default: {
+      name: isSepolia ? 'Etherscan Sepolia' : 'Besu Explorer',
+      url: isSepolia ? 'https://sepolia.etherscan.io' : '',
+    },
   },
 } as const;

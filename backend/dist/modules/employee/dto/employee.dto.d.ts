@@ -6,7 +6,7 @@ export declare class CreateEmployeeDto {
     email: string;
     phone?: string;
     organizationalUnitId: string;
-    positionId?: string;
+    positionId?: string | null;
     status?: EmployeeStatus;
     hiredAt?: string;
     profileImageUrl?: string;
@@ -17,7 +17,7 @@ export declare class UpdateEmployeeDto {
     email?: string;
     phone?: string;
     organizationalUnitId?: string;
-    positionId?: string;
+    positionId?: string | null;
     status?: EmployeeStatus;
     hiredAt?: string;
     profileImageUrl?: string;

@@ -68,25 +68,25 @@ __decorate([
     __metadata("design:type", OrganizationalUnit)
 ], Employee.prototype, "organizationalUnit", void 0);
 __decorate([
-    Column({ nullable: true }),
-    __metadata("design:type", String)
+    Column({ type: 'uuid', nullable: true }),
+    __metadata("design:type", Object)
 ], Employee.prototype, "positionId", void 0);
 __decorate([
     ManyToOne(() => Position, { nullable: true, onDelete: 'SET NULL', eager: false }),
     JoinColumn({ name: 'positionId' }),
-    __metadata("design:type", Position)
+    __metadata("design:type", Object)
 ], Employee.prototype, "position", void 0);
 __decorate([
     Column({ type: 'enum', enum: EmployeeStatus, default: EmployeeStatus.PENDING }),
     __metadata("design:type", String)
 ], Employee.prototype, "status", void 0);
 __decorate([
-    Column({ nullable: true }),
-    __metadata("design:type", String)
+    Column({ type: 'varchar', nullable: true }),
+    __metadata("design:type", Object)
 ], Employee.prototype, "profileImageUrl", void 0);
 __decorate([
-    Column({ nullable: true }),
-    __metadata("design:type", Date)
+    Column({ type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
 ], Employee.prototype, "hiredAt", void 0);
 __decorate([
     CreateDateColumn(),

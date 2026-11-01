@@ -14,6 +14,7 @@ import { Role } from './entities/role.entity.js';
 import { Permission } from './entities/permission.entity.js';
 import { UserRoleScope } from './entities/user-role-scope.entity.js';
 import { Employee } from '../employee/employee.entity.js';
+import { Position } from '../position/position.entity.js';
 import { LocalStrategy } from './strategies/local.strategy.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
@@ -42,6 +43,7 @@ AuthModule = __decorate([
                 Permission,
                 UserRoleScope,
                 Employee,
+                Position,
             ]),
         ],
         providers: [

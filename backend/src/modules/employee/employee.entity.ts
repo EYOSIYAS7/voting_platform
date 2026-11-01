@@ -45,21 +45,21 @@ export class Employee {
   @JoinColumn({ name: 'organizationalUnitId' })
   organizationalUnit: OrganizationalUnit;
 
-  @Column({ nullable: true })
-  positionId: string;
+  @Column({ type: 'uuid', nullable: true })
+  positionId: string | null;
 
   @ManyToOne(() => Position, { nullable: true, onDelete: 'SET NULL', eager: false })
   @JoinColumn({ name: 'positionId' })
-  position: Position;
+  position: Position | null;
 
   @Column({ type: 'enum', enum: EmployeeStatus, default: EmployeeStatus.PENDING })
   status: EmployeeStatus;
 
-  @Column({ nullable: true })
-  profileImageUrl: string;
+  @Column({ type: 'varchar', nullable: true })
+  profileImageUrl: string | null;
 
-  @Column({ nullable: true })
-  hiredAt: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  hiredAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

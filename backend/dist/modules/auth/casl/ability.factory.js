@@ -32,6 +32,11 @@ let AbilityFactory = class AbilityFactory {
             can('delete', 'eligibility');
             can('read', 'audit');
             can('read', 'result');
+            can('create', 'vote');
+            can('read', 'profile');
+            can('update', 'profile');
+            can('create', 'wallet-binding');
+            can('read', 'wallet-binding');
         }
         if (roles.includes(SystemRole.EMPLOYEE)) {
             can('read', 'election');

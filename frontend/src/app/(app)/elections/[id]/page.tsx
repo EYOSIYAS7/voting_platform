@@ -254,14 +254,17 @@ export default function ElectionDetailPage() {
         </div>
 
         <div className={styles.asideContent}>
-          {countdownTarget && countdownLabel && (
+          {countdownTarget && countdownLabel && countdownTarget * 1000 > Date.now() && (
             <>
               <span className={styles.asideLabel}>{countdownLabel}</span>
               <CountdownTimer
                 targetTimestamp={countdownTarget}
-                onExpire={() => loadData()}
+                onExpire={loadData}
               />
             </>
+          )}
+          {countdownTarget && countdownTarget * 1000 <= Date.now() && status !== ElectionStatus.ENDED && (
+            <p className={styles.asideLabel}>Period ended</p>
           )}
           {status === ElectionStatus.ENDED && (
             <p className={styles.asideLabel}>This election is closed.</p>
