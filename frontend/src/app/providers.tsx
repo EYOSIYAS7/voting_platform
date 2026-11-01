@@ -3,6 +3,7 @@
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/useAuthStore';
+import { SessionExpiryToast } from '@/components/SessionExpiryToast';
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <AuthInitializer />
       {children}
+      <SessionExpiryToast />
     </QueryClientProvider>
   );
 }

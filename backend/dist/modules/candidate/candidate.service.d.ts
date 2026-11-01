@@ -4,6 +4,7 @@ import { Election } from '../election/entities/election.entity.js';
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
 import { Employee } from '../employee/employee.entity.js';
 import { Position } from '../position/position.entity.js';
+import { VotingService } from '../voting/voting.service.js';
 import { NominateCandidateDto, SelfNominateDto, UpdateCandidateDto, ReviewCandidateDto } from './dto/candidate.dto.js';
 export declare class CandidateService {
     private readonly candidateRepo;
@@ -11,8 +12,10 @@ export declare class CandidateService {
     private readonly voterRepo;
     private readonly employeeRepo;
     private readonly positionRepo;
+    private readonly votingService;
     private readonly dataSource;
-    constructor(candidateRepo: Repository<Candidate>, electionRepo: Repository<Election>, voterRepo: Repository<ElectionVoter>, employeeRepo: Repository<Employee>, positionRepo: Repository<Position>, dataSource: DataSource);
+    private readonly logger;
+    constructor(candidateRepo: Repository<Candidate>, electionRepo: Repository<Election>, voterRepo: Repository<ElectionVoter>, employeeRepo: Repository<Employee>, positionRepo: Repository<Position>, votingService: VotingService, dataSource: DataSource);
     private requireElection;
     private requireEmployee;
     private assertNominationOpen;

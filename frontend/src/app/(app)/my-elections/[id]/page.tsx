@@ -69,7 +69,7 @@ const NEXT_STATUS_MAP: Partial<Record<ElectionStatus, { next: ElectionStatus; ac
   },
   [ElectionStatus.UPCOMING]: {
     next: ElectionStatus.ACTIVE,
-    actionLabel: 'Start Live Voting',
+    actionLabel: 'Start Live Voting & Publish to Chain',
   },
   [ElectionStatus.ACTIVE]: {
     next: ElectionStatus.ENDED,
@@ -781,21 +781,29 @@ export default function ManageElectionPage() {
                     <AlertTriangle size={24} />
                   </div>
                   <div>
-                    <h3 className={styles.chainTitle}>Election Not Yet Published On-Chain</h3>
+                    <h3 className={styles.chainTitle}>
+                      {election.status === ElectionStatus.ACTIVE
+                        ? 'Blockchain Initialization Pending'
+                        : 'Scheduled for Automatic On-Chain Deployment'}
+                    </h3>
                     <p className={styles.chainDesc}>
-                      This election is currently stored only in the off-chain application database. To enable immutable ballot recording and on-chain vote relaying, publish this election to Hyperledger Besu.
+                      {election.status === ElectionStatus.ACTIVE
+                        ? 'Live voting is active, but on-chain smart contract registration is pending. Click below to publish this election and all approved candidates.'
+                        : 'This election and all approved candidates will be automatically deployed to the blockchain when live voting starts (either by reaching the start date or via "Start Live Voting").'}
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className={styles.chainPublishBtn}
-                  onClick={() => setShowPublishModal(true)}
-                  disabled={actionLoading}
-                >
-                  <ShieldCheck size={16} />
-                  <span>Publish to Blockchain</span>
-                </button>
+                {election.status === ElectionStatus.ACTIVE && (
+                  <button
+                    type="button"
+                    className={styles.chainPublishBtn}
+                    onClick={() => setShowPublishModal(true)}
+                    disabled={actionLoading}
+                  >
+                    <ShieldCheck size={16} />
+                    <span>Publish to Blockchain Now</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1017,6 +1025,18 @@ export default function ManageElectionPage() {
                           <span>On-Chain Slot #{cand.onChainCandidateIndex}</span>
                         </div>
                       )}
+                      {isApproved && !hasOnChainSlot && !election.onChainElectionId && (
+                        <div className={styles.candidateChainSlot} style={{ color: 'var(--color-accent)' }}>
+                          <Clock size={13} />
+                          <span>Will deploy on live voting start</span>
+                        </div>
+                      )}
+                      {isApproved && !hasOnChainSlot && !!election.onChainElectionId && (
+                        <div className={styles.candidateChainSlot} style={{ color: '#d97706' }}>
+                          <AlertTriangle size={13} />
+                          <span>Not yet deployed on-chain</span>
+                        </div>
+                      )}
 
                       {/* Candidate Actions */}
                       <div className={styles.candidateActions}>
@@ -1029,7 +1049,7 @@ export default function ManageElectionPage() {
                               disabled={actionLoading}
                             >
                               <UserCheck size={14} />
-                              <span>Approve</span>
+                              <span>{election.onChainElectionId ? 'Approve & Publish to Chain' : 'Approve'}</span>
                             </button>
                             <button
                               type="button"
@@ -1042,16 +1062,16 @@ export default function ManageElectionPage() {
                             </button>
                           </>
                         )}
-
-                        {isApproved && election.onChainElectionId && !hasOnChainSlot && (
+                        {isApproved && !hasOnChainSlot && !!election.onChainElectionId && (
                           <button
                             type="button"
-                            className={styles.deployCandidateBtn}
+                            className={styles.advanceBtn}
+                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem', width: '100%', justifyContent: 'center' }}
                             onClick={() => handlePublishCandidateOnChain(cand.id)}
                             disabled={actionLoading}
                           >
-                            <Shield size={14} />
-                            <span>Deploy Slot to Besu</span>
+                            <ShieldCheck size={14} />
+                            <span>Publish to Chain Now</span>
                           </button>
                         )}
                       </div>
@@ -1416,16 +1436,14 @@ export default function ManageElectionPage() {
               {nextTransition.next === ElectionStatus.ACTIVE && (
                 <div>
                   <p style={{ fontSize: '0.85rem', color: 'var(--color-text-3)' }}>
-                    Starting voting will open the live ballot for eligible employees to cast votes on Hyperledger Besu. Once active, candidates and eligibility rules are locked.
+                    Starting live voting will initialize the smart contract on the blockchain, deploy all approved candidates to on-chain ballot slots, and open voting for all eligible employees.
                   </p>
-                  {!election.onChainElectionId && (
-                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', borderRadius: 'var(--r-sm)', background: 'rgba(181, 101, 29, 0.12)', border: '1px solid rgba(181, 101, 29, 0.3)', color: 'var(--color-warning)', fontSize: '0.8rem', display: 'flex', gap: '0.5rem' }}>
-                      <AlertTriangle size={18} />
-                      <span>
-                        <strong>Caution:</strong> This election has not been deployed on Hyperledger Besu yet! We recommend publishing to blockchain before starting voting.
-                      </span>
-                    </div>
-                  )}
+                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', borderRadius: 'var(--r-sm)', background: 'rgba(56, 142, 60, 0.1)', border: '1px solid rgba(56, 142, 60, 0.3)', color: 'var(--color-success)', fontSize: '0.8rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <ShieldCheck size={18} />
+                    <span>
+                      <strong>Automatic Blockchain Sync:</strong> The election and all approved candidates will be published to the blockchain as part of this action.
+                    </span>
+                  </div>
                 </div>
               )}
 

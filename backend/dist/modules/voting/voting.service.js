@@ -42,18 +42,33 @@ let VotingService = VotingService_1 = class VotingService {
             ElectionStatus.DRAFT,
             ElectionStatus.REGISTRATION,
             ElectionStatus.UPCOMING,
+            ElectionStatus.ACTIVE,
         ].includes(election.status)) {
-            throw new BadRequestException(`Election must be in DRAFT, REGISTRATION, or UPCOMING status to publish. Current: ${election.status}`);
+            throw new BadRequestException(`Election must be in DRAFT, REGISTRATION, UPCOMING, or ACTIVE status to publish. Current: ${election.status}`);
         }
-        const registrationStart = election.registrationDeadline
-            ? BigInt(Math.floor(new Date(election.registrationDeadline).getTime() / 1000) -
-                86400)
-            : BigInt(Math.floor(Date.now() / 1000));
-        const registrationEnd = election.registrationDeadline
-            ? BigInt(Math.floor(new Date(election.registrationDeadline).getTime() / 1000))
-            : BigInt(Math.floor(new Date(election.startDate).getTime() / 1000) - 60);
-        const votingStart = BigInt(Math.floor(new Date(election.startDate).getTime() / 1000));
-        const votingEnd = BigInt(Math.floor(new Date(election.endDate).getTime() / 1000));
+        const nowSec = Math.floor(Date.now() / 1000);
+        let vStart = Math.floor(new Date(election.startDate).getTime() / 1000);
+        if (vStart > nowSec) {
+            vStart = nowSec;
+        }
+        let vEnd = Math.floor(new Date(election.endDate).getTime() / 1000);
+        if (vEnd <= vStart) {
+            vEnd = vStart + 3600;
+        }
+        let regEnd = election.registrationDeadline
+            ? Math.floor(new Date(election.registrationDeadline).getTime() / 1000)
+            : vStart;
+        if (regEnd > vStart) {
+            regEnd = vStart;
+        }
+        let regStart = regEnd - 86400;
+        if (regStart >= regEnd) {
+            regStart = regEnd - 3600;
+        }
+        const registrationStart = BigInt(regStart);
+        const registrationEnd = BigInt(regEnd);
+        const votingStart = BigInt(vStart);
+        const votingEnd = BigInt(vEnd);
         const onChainId = await this.blockchain.createElectionOnChain({
             title: election.title,
             description: election.description ?? '',

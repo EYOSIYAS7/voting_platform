@@ -37,8 +37,24 @@ export default function ElectionsPage() {
       .finally(() => setIsLoading(false));
   }, [isAuthenticated, isInitialized]);
 
+  // Dynamically resolve time-based status for client rendering
+  const normalizedElections = useMemo(() => {
+    const now = new Date();
+    return elections.map((el) => {
+      const end = new Date(el.endDate);
+      const start = new Date(el.startDate);
+      if (el.status === ElectionStatus.ACTIVE && now >= end) {
+        return { ...el, status: ElectionStatus.ENDED };
+      }
+      if (el.status === ElectionStatus.UPCOMING && now >= start && now < end) {
+        return { ...el, status: ElectionStatus.ACTIVE };
+      }
+      return el;
+    });
+  }, [elections]);
+
   const filteredElections = useMemo(() => {
-    return elections.filter((election) => {
+    return normalizedElections.filter((election) => {
       const matchesSearch =
         election.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (election.description || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -46,15 +62,15 @@ export default function ElectionsPage() {
         activeFilter === 'All' || election.status === (activeFilter as ElectionStatus);
       return matchesSearch && matchesFilter;
     });
-  }, [elections, searchQuery, activeFilter]);
+  }, [normalizedElections, searchQuery, activeFilter]);
 
   const counts = useMemo(() => {
     const byStatus = { ACTIVE: 0, UPCOMING: 0, REGISTRATION: 0, DRAFT: 0, ENDED: 0 };
-    elections.forEach(({ status }) => {
+    normalizedElections.forEach(({ status }) => {
       if (status in byStatus) byStatus[status as keyof typeof byStatus] += 1;
     });
     return byStatus;
-  }, [elections]);
+  }, [normalizedElections]);
 
   const FILTERS: { value: StatusFilter; label: string }[] = [
     { value: 'All', label: 'All' },

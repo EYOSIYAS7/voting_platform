@@ -138,6 +138,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 // Setup listener for 401 unauthorized events
 if (typeof window !== 'undefined') {
   window.addEventListener('insa:unauthorized', () => {
+    window.dispatchEvent(new CustomEvent('insa:session-expired'));
     useAuthStore.getState().logout();
   });
 }

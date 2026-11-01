@@ -4,7 +4,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Candidate } from './entities/candidate.entity.js';
 import { Election } from '../election/entities/election.entity.js';
@@ -14,6 +14,7 @@ import { Position } from '../position/position.entity.js';
 import { CandidateService } from './candidate.service.js';
 import { CandidateController } from './candidate.controller.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { VotingModule } from '../voting/voting.module.js';
 let CandidateModule = class CandidateModule {
 };
 CandidateModule = __decorate([
@@ -21,6 +22,7 @@ CandidateModule = __decorate([
         imports: [
             TypeOrmModule.forFeature([Candidate, Election, ElectionVoter, Employee, Position]),
             AuthModule,
+            forwardRef(() => VotingModule),
         ],
         providers: [CandidateService],
         controllers: [CandidateController],

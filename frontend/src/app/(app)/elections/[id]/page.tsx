@@ -18,7 +18,7 @@ import {
 import { CandidateCard } from '@/components/CandidateCard';
 import { ResultsChart } from '@/components/ResultsChart';
 import { CountdownTimer } from '@/components/CountdownTimer';
-import { CheckCircle, AlertTriangle, Info, ExternalLink, Copy, Check } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Info, ExternalLink, Copy, Check, Clock } from 'lucide-react';
 import styles from './election-detail.module.css';
 
 const STATUS_LABEL: Record<ElectionStatus, string> = {
@@ -47,6 +47,7 @@ export default function ElectionDetailPage() {
   // ── Data state ─────────────────────────────────────────────────────────────
   const [election, setElection] = useState<Election | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [myCandidacy, setMyCandidacy] = useState<Candidate | null>(null);
   const [eligibility, setEligibility] = useState<EligibilityCheckResponse | null>(null);
   const [results, setResults] = useState<VotingResultsResponse | null>(null);
   const [voteProof, setVoteProof] = useState<VoteProofResponse | null>(null);
@@ -91,10 +92,14 @@ export default function ElectionDetailPage() {
       setElection(electionData);
       setCandidates(candidatesData);
 
-      // Only fetch eligibility & results for authenticated users
+      // Only fetch eligibility, my candidacy & results for authenticated users
       if (isAuthenticated) {
-        const eligData = await electionsApi.checkMyEligibility(electionDbId).catch(() => null);
+        const [eligData, myCand] = await Promise.all([
+          electionsApi.checkMyEligibility(electionDbId).catch(() => null),
+          electionsApi.getMyCandidacy(electionDbId).catch(() => null),
+        ]);
         setEligibility(eligData);
+        setMyCandidacy(myCand);
 
         if (eligData?.hasVoted) {
           const proof = await electionsApi.verifyMyVote(electionDbId).catch(() => null);
@@ -181,7 +186,24 @@ export default function ElectionDetailPage() {
     );
   }
 
-  const status = election.status;
+  const nowMs = Date.now();
+  const voteStart = new Date(election.startDate).getTime() / 1000;
+  const voteEnd = new Date(election.endDate).getTime() / 1000;
+  const regEnd = election.registrationDeadline
+    ? new Date(election.registrationDeadline).getTime() / 1000
+    : null;
+
+  let status = election.status;
+  if (status === ElectionStatus.ACTIVE && voteEnd * 1000 <= nowMs) {
+    status = ElectionStatus.ENDED;
+  } else if (
+    status === ElectionStatus.UPCOMING &&
+    voteStart * 1000 <= nowMs &&
+    voteEnd * 1000 > nowMs
+  ) {
+    status = ElectionStatus.ACTIVE;
+  }
+
   const cfg = { label: STATUS_LABEL[status], cls: STATUS_CLS[status] };
 
   const hasVoted = eligibility?.hasVoted ?? false;
@@ -189,12 +211,6 @@ export default function ElectionDetailPage() {
   const canVote = isAuthenticated && isEligible && !hasVoted && status === ElectionStatus.ACTIVE;
   const showLiveResults =
     status === ElectionStatus.ENDED || (status === ElectionStatus.ACTIVE && hasVoted);
-
-  const voteStart = new Date(election.startDate).getTime() / 1000;
-  const voteEnd = new Date(election.endDate).getTime() / 1000;
-  const regEnd = election.registrationDeadline
-    ? new Date(election.registrationDeadline).getTime() / 1000
-    : null;
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleString(undefined, {
@@ -305,8 +321,8 @@ export default function ElectionDetailPage() {
             )}
           </div>
 
-          {/* Self-nomination form (Registration phase) */}
-          {status === ElectionStatus.REGISTRATION && isAuthenticated && (
+          {/* Self-nomination form (Registration phase - not yet registered) */}
+          {status === ElectionStatus.REGISTRATION && isAuthenticated && !myCandidacy && (
             <div className={`panel panel-pad ${styles.regCard}`}>
               <div className={styles.regHeader}>
                 <h3 className={styles.regTitle}>Register as a candidate</h3>
@@ -351,6 +367,66 @@ export default function ElectionDetailPage() {
                   {isSubmittingNomination ? 'Submitting…' : 'Submit registration'}
                 </button>
               </form>
+            </div>
+          )}
+
+          {/* User has already submitted candidacy */}
+          {status === ElectionStatus.REGISTRATION && isAuthenticated && myCandidacy && (
+            <div className={`panel panel-pad ${styles.regCard}`}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                {myCandidacy.status === CandidateStatus.APPROVED && (
+                  <CheckCircle size={22} style={{ color: 'var(--color-success)', flexShrink: 0, marginTop: '2px' }} />
+                )}
+                {myCandidacy.status === CandidateStatus.PENDING && (
+                  <Clock size={22} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: '2px' }} />
+                )}
+                {myCandidacy.status === CandidateStatus.REJECTED && (
+                  <AlertTriangle size={22} style={{ color: 'var(--color-danger)', flexShrink: 0, marginTop: '2px' }} />
+                )}
+                {myCandidacy.status === CandidateStatus.WITHDRAWN && (
+                  <Info size={22} style={{ color: 'var(--color-text-2)', flexShrink: 0, marginTop: '2px' }} />
+                )}
+                <div style={{ flex: 1 }}>
+                  <h3 className={styles.regTitle} style={{ margin: '0 0 0.25rem' }}>
+                    {myCandidacy.status === CandidateStatus.APPROVED && 'Candidacy Approved'}
+                    {myCandidacy.status === CandidateStatus.PENDING && 'Candidacy Submitted — Awaiting Review'}
+                    {myCandidacy.status === CandidateStatus.REJECTED && 'Candidacy Not Approved'}
+                    {myCandidacy.status === CandidateStatus.WITHDRAWN && 'Candidacy Withdrawn'}
+                  </h3>
+                  <p className={styles.regDesc} style={{ margin: 0 }}>
+                    {myCandidacy.status === CandidateStatus.APPROVED &&
+                      'Your nomination has been approved by the election administrator. You are officially on the ballot.'}
+                    {myCandidacy.status === CandidateStatus.PENDING &&
+                      'Your nomination was received and is currently under review by the election administrator. You will appear on the ballot once approved.'}
+                    {myCandidacy.status === CandidateStatus.REJECTED &&
+                      (myCandidacy.rejectionReason
+                        ? `Your candidacy was rejected: "${myCandidacy.rejectionReason}"`
+                        : 'Your candidacy was rejected by the election administrator.')}
+                    {myCandidacy.status === CandidateStatus.WITHDRAWN &&
+                      'You have withdrawn your candidacy for this election.'}
+                  </p>
+                  {(myCandidacy.statement || myCandidacy.slogan) && (
+                    <div
+                      style={{
+                        marginTop: '0.75rem',
+                        padding: '0.6rem 0.85rem',
+                        background: 'var(--color-elevated)',
+                        borderRadius: 'var(--r-sm)',
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      {myCandidacy.slogan && (
+                        <div style={{ fontWeight: 600, fontStyle: 'italic', marginBottom: '0.25rem' }}>
+                          &ldquo;{myCandidacy.slogan}&rdquo;
+                        </div>
+                      )}
+                      {myCandidacy.statement && (
+                        <div style={{ color: 'var(--color-text-2)' }}>{myCandidacy.statement}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>

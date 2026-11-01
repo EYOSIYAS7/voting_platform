@@ -10,7 +10,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException, } from '@nestjs/common';
+var CandidateService_1;
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException, Logger, Inject, forwardRef, } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Candidate, CandidateStatus } from './entities/candidate.entity.js';
@@ -18,19 +19,23 @@ import { Election, ElectionStatus } from '../election/entities/election.entity.j
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
 import { Employee } from '../employee/employee.entity.js';
 import { Position } from '../position/position.entity.js';
-let CandidateService = class CandidateService {
+import { VotingService } from '../voting/voting.service.js';
+let CandidateService = CandidateService_1 = class CandidateService {
     candidateRepo;
     electionRepo;
     voterRepo;
     employeeRepo;
     positionRepo;
+    votingService;
     dataSource;
-    constructor(candidateRepo, electionRepo, voterRepo, employeeRepo, positionRepo, dataSource) {
+    logger = new Logger(CandidateService_1.name);
+    constructor(candidateRepo, electionRepo, voterRepo, employeeRepo, positionRepo, votingService, dataSource) {
         this.candidateRepo = candidateRepo;
         this.electionRepo = electionRepo;
         this.voterRepo = voterRepo;
         this.employeeRepo = employeeRepo;
         this.positionRepo = positionRepo;
+        this.votingService = votingService;
         this.dataSource = dataSource;
     }
     async requireElection(electionId) {
@@ -209,7 +214,24 @@ let CandidateService = class CandidateService {
         candidate.rejectionReason = dto.rejectionReason ?? null;
         candidate.reviewedByEmployeeId = reviewerEmployeeId;
         candidate.reviewedAt = new Date();
-        return this.candidateRepo.save(candidate);
+        const saved = await this.candidateRepo.save(candidate);
+        if (dto.status === CandidateStatus.APPROVED) {
+            const election = await this.requireElection(electionId);
+            if (election.onChainElectionId &&
+                (saved.onChainCandidateIndex === null || saved.onChainCandidateIndex === undefined)) {
+                try {
+                    this.logger.log(`Auto-publishing newly approved candidate ${saved.id} on-chain...`);
+                    const res = await this.votingService.publishCandidateOnChain(electionId, saved.id);
+                    saved.onChainCandidateIndex = res.onChainCandidateIndex;
+                    return saved;
+                }
+                catch (err) {
+                    this.logger.error(`Failed to auto-publish candidate ${saved.id} on-chain: ${err.message}`);
+                    throw new BadRequestException(`Candidate approved in database, but failed to publish on-chain: ${err.message}. Use the "Publish to Chain Now" button to retry.`);
+                }
+            }
+        }
+        return saved;
     }
     async withdraw(electionId, candidateId, requestingEmployeeId, isAdmin) {
         const candidate = await this.findOne(electionId, candidateId);
@@ -239,18 +261,20 @@ let CandidateService = class CandidateService {
         await this.candidateRepo.remove(candidate);
     }
 };
-CandidateService = __decorate([
+CandidateService = CandidateService_1 = __decorate([
     Injectable(),
     __param(0, InjectRepository(Candidate)),
     __param(1, InjectRepository(Election)),
     __param(2, InjectRepository(ElectionVoter)),
     __param(3, InjectRepository(Employee)),
     __param(4, InjectRepository(Position)),
+    __param(5, Inject(forwardRef(() => VotingService))),
     __metadata("design:paramtypes", [Repository,
         Repository,
         Repository,
         Repository,
         Repository,
+        VotingService,
         DataSource])
 ], CandidateService);
 export { CandidateService };

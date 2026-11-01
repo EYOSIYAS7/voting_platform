@@ -4,6 +4,11 @@ import {
   BadRequestException,
   ForbiddenException,
   ConflictException,
+  Logger,
+  Inject,
+  forwardRef,
+  OnApplicationBootstrap,
+  BeforeApplicationShutdown,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
@@ -12,6 +17,8 @@ import { Election, ElectionStatus, ElectionType } from './entities/election.enti
 import { EligibilityRule } from './entities/eligibility-rule.entity.js';
 import { ElectionVoter } from './entities/election-voter.entity.js';
 import { Employee, EmployeeStatus } from '../employee/employee.entity.js';
+import { Candidate, CandidateStatus } from '../candidate/entities/candidate.entity.js';
+import { VotingService } from '../voting/voting.service.js';
 
 import { OrganizationalUnitService } from '../organizational-unit/organizational-unit.service.js';
 
@@ -24,16 +31,21 @@ import {
 
 /** Valid status advancement transitions */
 const ALLOWED_TRANSITIONS: Record<ElectionStatus, ElectionStatus[]> = {
-  [ElectionStatus.DRAFT]:        [ElectionStatus.REGISTRATION, ElectionStatus.CANCELLED],
-  [ElectionStatus.REGISTRATION]: [ElectionStatus.UPCOMING,     ElectionStatus.CANCELLED],
-  [ElectionStatus.UPCOMING]:     [ElectionStatus.ACTIVE,       ElectionStatus.CANCELLED],
-  [ElectionStatus.ACTIVE]:       [ElectionStatus.ENDED,        ElectionStatus.CANCELLED],
+  [ElectionStatus.DRAFT]:        [ElectionStatus.REGISTRATION, ElectionStatus.UPCOMING, ElectionStatus.ACTIVE, ElectionStatus.CANCELLED],
+  [ElectionStatus.REGISTRATION]: [ElectionStatus.UPCOMING, ElectionStatus.ACTIVE, ElectionStatus.CANCELLED],
+  [ElectionStatus.UPCOMING]:     [ElectionStatus.ACTIVE, ElectionStatus.CANCELLED],
+  [ElectionStatus.ACTIVE]:       [ElectionStatus.ENDED, ElectionStatus.CANCELLED],
   [ElectionStatus.ENDED]:        [],
   [ElectionStatus.CANCELLED]:    [],
 };
 
 @Injectable()
-export class ElectionService {
+export class ElectionService implements OnApplicationBootstrap, BeforeApplicationShutdown {
+  private readonly logger = new Logger(ElectionService.name);
+  private schedulerTimer?: NodeJS.Timeout;
+  private isSyncing = false;
+  private readonly startElectionLocks = new Set<string>();
+
   constructor(
     @InjectRepository(Election)
     private readonly electionRepo: Repository<Election>,
@@ -47,9 +59,33 @@ export class ElectionService {
     @InjectRepository(Employee)
     private readonly employeeRepo: Repository<Employee>,
 
+    @InjectRepository(Candidate)
+    private readonly candidateRepo: Repository<Candidate>,
+
+    @Inject(forwardRef(() => VotingService))
+    private readonly votingService: VotingService,
+
     private readonly orgUnitService: OrganizationalUnitService,
     private readonly dataSource: DataSource,
   ) {}
+
+  onApplicationBootstrap() {
+    this.syncTimeBasedStatuses().catch((err) => {
+      this.logger.error(`Initial time-based status sync failed: ${err.message}`);
+    });
+
+    this.schedulerTimer = setInterval(() => {
+      this.syncTimeBasedStatuses().catch((err) => {
+        this.logger.error(`Periodic time-based status sync failed: ${err.message}`);
+      });
+    }, 10000);
+  }
+
+  beforeApplicationShutdown() {
+    if (this.schedulerTimer) {
+      clearInterval(this.schedulerTimer);
+    }
+  }
 
   /* ──────────────────────────── ELECTIONS ──────────────────────────── */
 
@@ -78,7 +114,23 @@ export class ElectionService {
     return this.electionRepo.save(election);
   }
 
+  /** Fast local DB update to mark ended elections without making blockchain calls */
+  private async fastSyncEndedElections(): Promise<void> {
+    await this.electionRepo
+      .createQueryBuilder()
+      .update(Election)
+      .set({ status: ElectionStatus.ENDED })
+      .where('status = :active AND "endDate" <= :now', {
+        active: ElectionStatus.ACTIVE,
+        now: new Date(),
+      })
+      .execute()
+      .catch(() => {});
+  }
+
   async findAll(organizationId?: string, status?: ElectionStatus): Promise<Election[]> {
+    await this.fastSyncEndedElections();
+
     const where: Partial<Record<keyof Election, unknown>> = {};
     if (organizationId) where.organizationId = organizationId;
     if (status)         where.status = status;
@@ -128,6 +180,166 @@ export class ElectionService {
     return this.electionRepo.save(election);
   }
 
+  /**
+   * Activates live voting for an election:
+   * 1. Publishes on-chain if not yet published
+   * 2. Sets status to ACTIVE
+   * 3. Publishes all approved candidates to blockchain
+   * 4. Ensures voter roll is computed
+   */
+  async startElection(id: string): Promise<Election> {
+    if (this.startElectionLocks.has(id)) {
+      this.logger.warn(`startElection already in progress for election ${id}, skipping concurrent invocation`);
+      return this.findOne(id);
+    }
+    this.startElectionLocks.add(id);
+
+    try {
+      let election = await this.findOne(id);
+      if (election.status === ElectionStatus.CANCELLED || election.status === ElectionStatus.ENDED) {
+        return election;
+      }
+
+      const now = new Date();
+      // If startDate was in the future, bring it to now so voting is immediately open
+      if (new Date(election.startDate) > now) {
+        election.startDate = now;
+        await this.electionRepo.save(election);
+      }
+
+      // 1. Publish on-chain if not already published
+      if (!election.onChainElectionId) {
+        this.logger.log(`Publishing election ${id} on-chain before activating...`);
+        const pub = await this.votingService.publishElectionOnChain(id, {});
+        election.onChainElectionId = pub.onChainElectionId;
+      }
+
+      // 2. Set status to ACTIVE
+      election.status = ElectionStatus.ACTIVE;
+      await this.electionRepo.save(election);
+
+      // 3. Publish all approved candidates to blockchain if not already on-chain
+      const approvedCandidates = await this.candidateRepo.find({
+        where: { electionId: id, status: CandidateStatus.APPROVED },
+      });
+      for (const cand of approvedCandidates) {
+        const fresh = await this.candidateRepo.findOne({ where: { id: cand.id } });
+        if (fresh && (fresh.onChainCandidateIndex === null || fresh.onChainCandidateIndex === undefined)) {
+          try {
+            this.logger.log(`Publishing candidate ${fresh.id} on-chain for election ${id}...`);
+            const pubRes = await this.votingService.publishCandidateOnChain(id, fresh.id);
+            fresh.onChainCandidateIndex = pubRes.onChainCandidateIndex;
+            await this.candidateRepo.save(fresh);
+          } catch (err: any) {
+            this.logger.error(`Error auto-publishing candidate ${fresh.id} on-chain: ${err.message}`);
+          }
+        }
+      }
+
+      // 4. Ensure voter roll is computed
+      if (!election.votersComputed) {
+        await this.computeEligibleVoters(id).catch((err) => {
+          this.logger.error(`Error computing voter roll for election ${id}: ${err.message}`);
+        });
+      }
+
+      return this.findOne(id);
+    } finally {
+      this.startElectionLocks.delete(id);
+    }
+  }
+
+  /**
+   * Automated periodic / on-demand lifecycle sync based on time:
+   * - ACTIVE elections past endDate -> ENDED
+   * - UPCOMING/REGISTRATION/DRAFT elections past startDate -> startElection()
+   * - REGISTRATION elections past registrationDeadline -> UPCOMING
+   */
+  async syncTimeBasedStatuses(): Promise<void> {
+    if (this.isSyncing) return;
+    this.isSyncing = true;
+
+    try {
+      const now = new Date();
+
+      const elections = await this.electionRepo.find({
+        where: [
+          { status: ElectionStatus.DRAFT },
+          { status: ElectionStatus.REGISTRATION },
+          { status: ElectionStatus.UPCOMING },
+          { status: ElectionStatus.ACTIVE },
+        ],
+      });
+
+      for (const el of elections) {
+        const start = new Date(el.startDate);
+        const end = new Date(el.endDate);
+        const regEnd = el.registrationDeadline ? new Date(el.registrationDeadline) : null;
+
+        // 1. If currently ACTIVE and end time passed -> transition to ENDED
+        if (el.status === ElectionStatus.ACTIVE && now >= end) {
+          this.logger.log(`Election ${el.id} (${el.title}) reached end time (${el.endDate}). Auto-ending election.`);
+          el.status = ElectionStatus.ENDED;
+          await this.electionRepo.save(el);
+          continue;
+        }
+
+        // 2. If DRAFT / REGISTRATION / UPCOMING and start time reached (and not yet ended) -> auto start election!
+        if (
+          (el.status === ElectionStatus.UPCOMING ||
+            el.status === ElectionStatus.REGISTRATION ||
+            el.status === ElectionStatus.DRAFT) &&
+          now >= start &&
+          now < end
+        ) {
+          this.logger.log(
+            `Election ${el.id} (${el.title}) reached start time (${el.startDate}). Auto-starting and publishing on-chain.`,
+          );
+          try {
+            await this.startElection(el.id);
+          } catch (err: any) {
+            this.logger.error(`Auto-start failed for election ${el.id}: ${err.message}`);
+          }
+          continue;
+        }
+
+        // 3. Close registration if deadline passed but voting has not started yet
+        if (
+          el.status === ElectionStatus.REGISTRATION &&
+          regEnd &&
+          now >= regEnd &&
+          now < start
+        ) {
+          this.logger.log(`Election ${el.id} (${el.title}) registration deadline passed. Moving to UPCOMING.`);
+          el.status = ElectionStatus.UPCOMING;
+          await this.electionRepo.save(el);
+          continue;
+        }
+
+        // 4. Self-healing: if election is ACTIVE and on-chain, check if any APPROVED candidate missed deployment
+        if (el.status === ElectionStatus.ACTIVE && el.onChainElectionId && now < end) {
+          const approvedCandidates = await this.candidateRepo.find({
+            where: { electionId: el.id, status: CandidateStatus.APPROVED },
+          });
+          for (const cand of approvedCandidates) {
+            if (cand.onChainCandidateIndex === null || cand.onChainCandidateIndex === undefined) {
+              try {
+                this.logger.log(`Self-healing: Auto-publishing missing candidate ${cand.id} on-chain for active election ${el.id}...`);
+                const pubRes = await this.votingService.publishCandidateOnChain(el.id, cand.id);
+                cand.onChainCandidateIndex = pubRes.onChainCandidateIndex;
+                await this.candidateRepo.save(cand);
+              } catch (err: any) {
+                this.logger.error(`Self-healing candidate publish failed for ${cand.id}: ${err.message}`);
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      this.isSyncing = false;
+    }
+  }
+
   async patchStatus(id: string, dto: PatchElectionStatusDto): Promise<Election> {
     const election = await this.findOne(id);
     const allowed = ALLOWED_TRANSITIONS[election.status];
@@ -136,6 +348,19 @@ export class ElectionService {
       throw new BadRequestException(
         `Cannot transition election from ${election.status} to ${dto.status}. Allowed: ${allowed.join(', ') || 'none'}`,
       );
+    }
+
+    if (dto.status === ElectionStatus.ACTIVE) {
+      return this.startElection(id);
+    }
+
+    if (dto.status === ElectionStatus.ENDED) {
+      const now = new Date();
+      if (new Date(election.endDate) > now) {
+        election.endDate = now;
+      }
+      election.status = ElectionStatus.ENDED;
+      return this.electionRepo.save(election);
     }
 
     election.status = dto.status;
@@ -271,25 +496,50 @@ export class ElectionService {
       }
     }
 
-    // ── Transactionally replace voter rows ───────────────────────────────
+    // ── Transactionally update voter roll without erasing voting history ───
     await this.dataSource.transaction(async (manager) => {
-      await manager.delete(ElectionVoter, { electionId });
+      // 1. Fetch existing voter records for this election
+      const existingRows = await manager.find(ElectionVoter, {
+        where: { electionId },
+      });
+      const existingMap = new Map(existingRows.map((r) => [r.employeeId, r]));
 
-      if (eligibleIds.size > 0) {
-        const rows: Partial<ElectionVoter>[] = [...eligibleIds].map((empId) => ({
-          electionId,
-          employeeId: empId,
-          isEligible: true,
-          hasVoted: false,
-          txHash: null,
-          votedAt: null,
-        }));
-        await manager
-          .createQueryBuilder()
-          .insert()
-          .into(ElectionVoter)
-          .values(rows)
-          .execute();
+      // 2. Handle existing voters that are no longer eligible under updated rules:
+      for (const row of existingRows) {
+        if (!eligibleIds.has(row.employeeId)) {
+          if (row.hasVoted) {
+            // NEVER erase a voter who has already cast a vote!
+            // Mark isEligible = false, but preserve hasVoted, txHash, and votedAt
+            row.isEligible = false;
+            await manager.save(row);
+          } else {
+            // Safe to remove if they haven't voted
+            await manager.remove(row);
+          }
+        }
+      }
+
+      // 3. Handle all eligible voters:
+      for (const empId of eligibleIds) {
+        const existing = existingMap.get(empId);
+        if (existing) {
+          // If already in table, ensure isEligible is true, but DO NOT touch hasVoted, txHash, or votedAt!
+          if (!existing.isEligible) {
+            existing.isEligible = true;
+            await manager.save(existing);
+          }
+        } else {
+          // New eligible voter who has not voted
+          const newVoter = manager.create(ElectionVoter, {
+            electionId,
+            employeeId: empId,
+            isEligible: true,
+            hasVoted: false,
+            txHash: null,
+            votedAt: null,
+          });
+          await manager.save(newVoter);
+        }
       }
 
       await manager.update(Election, { id: electionId }, { votersComputed: true });
@@ -341,6 +591,8 @@ export class ElectionService {
    * Used by election creators to manage their own elections.
    */
   async getElectionsCreatedByMe(employeeId: string): Promise<Election[]> {
+    await this.syncTimeBasedStatuses().catch(() => {});
+
     return this.electionRepo.find({
       where: { createdByEmployeeId: employeeId },
       order: { createdAt: 'DESC' },
@@ -352,6 +604,8 @@ export class ElectionService {
    * Only returns elections where voters have been computed.
    */
   async getMyElections(employeeId: string): Promise<Election[]> {
+    await this.syncTimeBasedStatuses().catch(() => {});
+
     // Automatically compute voters for any elections that haven't been computed yet
     const uncomputed = await this.electionRepo.find({
       where: { votersComputed: false },

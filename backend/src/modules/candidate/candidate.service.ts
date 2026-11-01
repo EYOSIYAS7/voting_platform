@@ -4,6 +4,9 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -13,6 +16,7 @@ import { Election, ElectionStatus } from '../election/entities/election.entity.j
 import { ElectionVoter } from '../election/entities/election-voter.entity.js';
 import { Employee } from '../employee/employee.entity.js';
 import { Position } from '../position/position.entity.js';
+import { VotingService } from '../voting/voting.service.js';
 
 import {
   NominateCandidateDto,
@@ -23,6 +27,8 @@ import {
 
 @Injectable()
 export class CandidateService {
+  private readonly logger = new Logger(CandidateService.name);
+
   constructor(
     @InjectRepository(Candidate)
     private readonly candidateRepo: Repository<Candidate>,
@@ -38,6 +44,9 @@ export class CandidateService {
 
     @InjectRepository(Position)
     private readonly positionRepo: Repository<Position>,
+
+    @Inject(forwardRef(() => VotingService))
+    private readonly votingService: VotingService,
 
     private readonly dataSource: DataSource,
   ) {}
@@ -340,7 +349,30 @@ export class CandidateService {
     candidate.reviewedByEmployeeId = reviewerEmployeeId;
     candidate.reviewedAt          = new Date();
 
-    return this.candidateRepo.save(candidate);
+    const saved = await this.candidateRepo.save(candidate);
+
+    if (dto.status === CandidateStatus.APPROVED) {
+      const election = await this.requireElection(electionId);
+      // If the election is already published on-chain, automatically publish this approved candidate!
+      if (
+        election.onChainElectionId &&
+        (saved.onChainCandidateIndex === null || saved.onChainCandidateIndex === undefined)
+      ) {
+        try {
+          this.logger.log(`Auto-publishing newly approved candidate ${saved.id} on-chain...`);
+          const res = await this.votingService.publishCandidateOnChain(electionId, saved.id);
+          saved.onChainCandidateIndex = res.onChainCandidateIndex;
+          return saved;
+        } catch (err: any) {
+          this.logger.error(`Failed to auto-publish candidate ${saved.id} on-chain: ${err.message}`);
+          throw new BadRequestException(
+            `Candidate approved in database, but failed to publish on-chain: ${err.message}. Use the "Publish to Chain Now" button to retry.`,
+          );
+        }
+      }
+    }
+
+    return saved;
   }
 
   /* ─────────────────── WITHDRAWAL ───────────────────────── */

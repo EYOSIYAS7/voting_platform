@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Candidate } from './entities/candidate.entity.js';
@@ -12,11 +12,13 @@ import { CandidateController } from './candidate.controller.js';
 
 // AuthModule exports AbilityFactory and PermissionsGuard
 import { AuthModule } from '../auth/auth.module.js';
+import { VotingModule } from '../voting/voting.module.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Candidate, Election, ElectionVoter, Employee, Position]),
     AuthModule,
+    forwardRef(() => VotingModule),
   ],
   providers: [CandidateService],
   controllers: [CandidateController],
